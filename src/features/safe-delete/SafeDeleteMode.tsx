@@ -1,4 +1,5 @@
 import { MediaGrid } from "../../components/media/MediaGrid";
+import { useRejectedItems } from "../../hooks/useLibrarySelectors";
 import { useAppStore } from "../../stores/appStore";
 import { useJobsStore } from "../../stores/jobsStore";
 import { useLibraryStore } from "../../stores/libraryStore";
@@ -7,11 +8,14 @@ export function SafeDeleteMode() {
   const setMode = useAppStore((state) => state.setMode);
   const showToast = useAppStore((state) => state.showToast);
   const addJob = useJobsStore((state) => state.addJob);
-  const rejects = useLibraryStore((state) => state.items.filter((item) => item.state === "reject"));
+  const rejects = useRejectedItems();
   const toggleSelection = useLibraryStore((state) => state.toggleSelection);
   const totalBytes = rejects.reduce((sum, item) => sum + item.sizeBytes, 0);
 
   const formatBytes = (bytes: number) => {
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
@@ -35,7 +39,13 @@ export function SafeDeleteMode() {
 
       <div className="safe-layout">
         <div className="grid-wrap">
-          <MediaGrid items={rejects} onToggle={toggleSelection} />
+          {rejects.length === 0 ? (
+            <div className="empty">
+              No rejected files yet. Mark items as reject in Purge Mode first.
+            </div>
+          ) : (
+            <MediaGrid items={rejects} onToggle={toggleSelection} />
+          )}
         </div>
 
         <aside className="safe-side">
@@ -71,6 +81,7 @@ export function SafeDeleteMode() {
               style={{ marginTop: 10, width: "100%", textAlign: "center" }}
               type="button"
               onClick={queueHoldingMove}
+              disabled={rejects.length === 0}
             >
               Move {rejects.length} to Holding Folder
             </button>

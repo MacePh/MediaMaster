@@ -15,7 +15,7 @@ import { useAppStore } from "../stores/appStore";
 export function App() {
   const mode = useAppStore((state) => state.mode);
   const setDbStatus = useAppStore((state) => state.setDbStatus);
-  const setFfmpegLabel = useAppStore((state) => state.setFfmpegLabel);
+  const setFfmpegStatus = useAppStore((state) => state.setFfmpegStatus);
 
   useEffect(() => {
     void (async () => {
@@ -28,16 +28,19 @@ export function App() {
 
       try {
         const ffmpeg = await detectFfmpeg();
-        if (ffmpeg.ffmpegPath && ffmpeg.ffmpegVersion) {
-          setFfmpegLabel(`FFmpeg · ${ffmpeg.ffmpegVersion.split("\n")[0] ?? "detected"}`);
+        if (ffmpeg.ffmpegPath) {
+          const versionLine = ffmpeg.ffmpegVersion?.split("\n")[0];
+          const tooltip = [versionLine, ffmpeg.ffmpegPath].filter(Boolean).join("\n");
+          setFfmpegStatus(true, tooltip || "FFmpeg ready");
         } else {
-          setFfmpegLabel("FFmpeg not detected");
+          setFfmpegStatus(false, "FFmpeg not detected");
         }
       } catch (error) {
         console.error("Failed to detect FFmpeg", error);
+        setFfmpegStatus(false, "FFmpeg not detected");
       }
     })();
-  }, [setDbStatus, setFfmpegLabel]);
+  }, [setDbStatus, setFfmpegStatus]);
 
   return (
     <div className="app">

@@ -1,12 +1,13 @@
 import { MediaGrid } from "../../components/media/MediaGrid";
+import { useVisibleItems, useSelectedCount } from "../../hooks/useLibrarySelectors";
 import { useAppStore } from "../../stores/appStore";
 import { useLibraryStore } from "../../stores/libraryStore";
 import { usePurgeStore } from "../../stores/purgeStore";
 
 export function BrowseMode() {
   const setMode = useAppStore((state) => state.setMode);
-  const visibleItems = useLibraryStore((state) => state.visibleItems());
-  const selectedCount = useLibraryStore((state) => state.selectedCount());
+  const visibleItems = useVisibleItems();
+  const selectedCount = useSelectedCount();
   const toggleSelection = useLibraryStore((state) => state.toggleSelection);
   const startSession = usePurgeStore((state) => state.startSession);
   const items = useLibraryStore((state) => state.items);

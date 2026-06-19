@@ -1,3 +1,4 @@
+import { usePurgeCounts } from "../../hooks/useLibrarySelectors";
 import { useLibraryStore } from "../../stores/libraryStore";
 
 export function Sidebar() {
@@ -5,9 +6,7 @@ export function Sidebar() {
   const tags = useLibraryStore((state) => state.tags);
   const activeSourceId = useLibraryStore((state) => state.activeSourceId);
   const setActiveSource = useLibraryStore((state) => state.setActiveSource);
-  const purgeCounts = useLibraryStore((state) => state.purgeCounts);
-
-  const counts = purgeCounts();
+  const counts = usePurgeCounts();
 
   return (
     <aside className="side">

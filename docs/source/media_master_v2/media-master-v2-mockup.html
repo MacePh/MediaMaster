@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Media Master v2 — UI Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e0f13; --panel: #16181f; --raised: #1e2129; --raised-2: #262a34;
+      --line: #2a2e38; --line-soft: #21242c; --txt: #e6e8ec; --txt-dim: #9298a4;
+      --txt-faint: #5e6471; --amber: #f2b84b; --amber-dim: #6e5524; --teal: #4fd1c5;
+      --danger: #e5705b; --green: #7ddc83; --blue: #73a7ff; --radius: 8px;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+      --display: "Space Grotesk", system-ui, sans-serif;
+      --body: "Inter", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--body); font-size: 13px; overflow: hidden; -webkit-font-smoothing: antialiased; }
+    button, input, select { font: inherit; }
+    .app { display: grid; grid-template-rows: 52px 1fr 128px; grid-template-columns: 260px 1fr 340px;
+      grid-template-areas: "top top top" "side main right" "tray tray tray"; height: 100vh; }
+    .top { grid-area: top; display: flex; align-items: center; gap: 14px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 10px; width: 230px; }
+    .glyph { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, var(--amber), #b97716); display: grid; place-items: center; color: #191006; font-family: var(--display); font-weight: 700; }
+    .brand-name { font-family: var(--display); font-size: 16px; font-weight: 600; }
+    .brand-name b { color: var(--amber); }
+    .search { width: 380px; display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 11px; color: var(--txt-faint); font-family: var(--mono); font-size: 12px; }
+    .search input { all: unset; flex: 1; color: var(--txt); }
+    .modes { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .modes button { all: unset; cursor: pointer; padding: 8px 12px; color: var(--txt-dim); font-size: 12px; }
+    .modes button.on { background: var(--raised-2); color: var(--txt); box-shadow: inset 0 -2px var(--amber); }
+    .spacer { flex: 1; }
+    .pill { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 11px; font-family: var(--mono); font-size: 11px; color: var(--txt-dim); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+    .side { grid-area: side; background: var(--panel); border-right: 1px solid var(--line); padding: 10px 8px; overflow: auto; }
+    .side-head { font-family: var(--display); text-transform: uppercase; letter-spacing: 0.9px; color: var(--txt-faint); font-size: 11px; font-weight: 600; padding: 10px 8px 6px; }
+    .side-item { display: flex; align-items: center; gap: 9px; padding: 7px 9px; margin: 1px 2px; border-radius: 7px; color: var(--txt-dim); cursor: pointer; border: 1px solid transparent; }
+    .side-item.active, .side-item:hover { background: var(--raised); color: var(--txt); border-color: var(--line-soft); }
+    .sw { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+    .count { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--txt-faint); }
+    .main { grid-area: main; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; }
+    .right { grid-area: right; background: var(--panel); border-left: 1px solid var(--line); overflow: auto; }
+    .tray { grid-area: tray; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-direction: column; }
+    .bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); }
+    .title { font-family: var(--display); font-weight: 600; font-size: 15px; }
+    .muted { color: var(--txt-faint); font-family: var(--mono); font-size: 11px; }
+    .btn { all: unset; cursor: pointer; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--txt-dim); background: var(--raised); font-size: 12px; }
+    .btn:hover { color: var(--txt); border-color: var(--amber-dim); }
+    .btn.primary { background: var(--amber); border-color: var(--amber); color: #191006; font-weight: 700; }
+    .btn.danger { background: #2a1718; border-color: #5b2927; color: #ff9a8b; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .select { background: var(--panel); border: 1px solid var(--line); color: var(--txt-dim); border-radius: 6px; padding: 7px 9px; font-family: var(--mono); font-size: 11px; }
+    .screen { display: none; height: 100%; overflow: hidden; flex-direction: column; }
+    .screen.on { display: flex; }
+    .grid-wrap { flex: 1; overflow: auto; padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(142px, 1fr)); gap: 14px; }
+    .grid.tagging-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    .tile { position: relative; background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; cursor: pointer; }
+    .tile:hover { border-color: var(--line); transform: translateY(-1px); }
+    .tile.sel { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber); }
+    .thumb { aspect-ratio: 4/3; display: grid; place-items: center; position: relative; }
+    .thumb::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, #000a); }
+    .badge { position: absolute; top: 7px; left: 7px; z-index: 2; font-family: var(--mono); font-size: 9px; background: #000b; border-radius: 4px; padding: 2px 5px; }
+    .state { position: absolute; top: 7px; right: 7px; z-index: 2; font-family: var(--mono); font-size: 9px; border-radius: 4px; padding: 2px 5px; background: #000b; }
+    .state.keep { color: var(--green); } .state.reject { color: var(--danger); } .state.maybe { color: var(--amber); }
+    .check { position: absolute; inset: auto 7px 7px auto; z-index: 2; width: 19px; height: 19px; border-radius: 5px; border: 1px solid #ffffff66; background: #0008; display: grid; place-items: center; opacity: 0; font-size: 11px; }
+    .tile.sel .check { opacity: 1; background: var(--amber); color: #191006; border-color: var(--amber); }
+    .cap { padding: 8px; }
+    .fn { font-family: var(--mono); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sub { font-family: var(--mono); font-size: 9.5px; color: var(--txt-faint); margin-top: 3px; }
+    .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .chip { font-family: var(--mono); font-size: 9px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 6px; color: var(--txt-dim); background: var(--bg); }
+    .chip.amber { border-color: var(--amber-dim); color: var(--amber); }
+    .chip.teal { border-color: #2c746f; color: var(--teal); }
+    .panel-pad { padding: 14px; }
+    .preview { aspect-ratio: 16/10; border: 1px solid var(--line-soft); border-radius: var(--radius); margin-bottom: 14px; display: grid; place-items: center; position: relative; overflow: hidden; }
+    .meta-table { width: 100%; border-collapse: collapse; }
+    .meta-table td { padding: 7px 0; border-bottom: 1px solid var(--line-soft); font-size: 11.5px; }
+    .meta-table .k { color: var(--txt-faint); font-family: var(--display); }
+    .meta-table .v { text-align: right; color: var(--txt); font-family: var(--mono); }
+    .section { font-family: var(--display); text-transform: uppercase; letter-spacing: 1px; font-size: 10px; color: var(--txt-faint); margin: 18px 0 9px; }
+    .op-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .op-card { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 10px; cursor: pointer; }
+    .op-card:hover { border-color: var(--amber-dim); }
+    .op-card .t { font-weight: 600; font-size: 12px; }
+    .op-card .d { font-family: var(--mono); font-size: 10px; color: var(--txt-faint); margin-top: 4px; }
+    .tray-head { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line-soft); }
+    .tray-title { font-family: var(--display); text-transform: uppercase; letter-spacing: 1px; font-size: 11px; color: var(--txt-dim); font-weight: 600; }
+    .tray-body { padding: 8px 16px; display: flex; flex-direction: column; gap: 7px; overflow: auto; }
+    .job { display: grid; grid-template-columns: 18px 220px 1fr 150px 60px; gap: 12px; align-items: center; }
+    .job-name, .job-op, .job-pct { font-family: var(--mono); font-size: 11px; }
+    .job-op { color: var(--txt-faint); }
+    .prog { height: 6px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: 999px; overflow: hidden; }
+    .prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--amber-dim), var(--amber)); }
+    .purge { height: 100%; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+    .purge-stage { display: grid; grid-template-columns: 170px 1fr 170px; gap: 16px; min-height: 0; padding: 16px; }
+    .pile { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--txt-dim); }
+    .pile .big { font-family: var(--display); font-size: 32px; color: var(--txt); font-weight: 700; }
+    .pile.reject .big { color: var(--danger); } .pile.keep .big { color: var(--green); }
+    .hero { border: 1px solid var(--line); border-radius: 14px; position: relative; overflow: hidden; display: grid; place-items: center; min-height: 280px; }
+    .hero .mark { font-family: var(--display); font-size: 74px; font-weight: 700; color: #ffffff0f; }
+    .hero-info { position: absolute; left: 16px; right: 16px; bottom: 16px; background: #000a; border: 1px solid #ffffff18; border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; }
+    .decision { position: absolute; top: 18px; border: 2px solid currentColor; border-radius: 10px; padding: 8px 13px; font-family: var(--display); font-weight: 700; font-size: 22px; opacity: 0.9; }
+    .decision.left { left: 18px; color: var(--danger); transform: rotate(-8deg); }
+    .decision.right { right: 18px; color: var(--green); transform: rotate(8deg); }
+    .kbdbar { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-top: 1px solid var(--line-soft); color: var(--txt-dim); font-family: var(--mono); font-size: 11px; }
+    .kbd { border: 1px solid var(--line); border-radius: 5px; background: var(--raised); padding: 3px 7px; color: var(--txt); }
+    .tag-layout, .safe-layout { display: grid; min-height: 0; flex: 1; }
+    .tag-layout { grid-template-columns: 1fr 310px; }
+    .safe-layout { grid-template-columns: 1fr 330px; }
+    .tag-panel, .safe-side { border-left: 1px solid var(--line); background: var(--panel); padding: 14px; overflow: auto; }
+    .tag-row { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line-soft); background: var(--bg); border-radius: 7px; padding: 9px; margin-bottom: 8px; cursor: pointer; }
+    .tag-row .hot { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--txt-faint); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+    .input { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; color: var(--txt); padding: 9px 10px; font-family: var(--mono); font-size: 12px; }
+    .summary-card { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+    .summary-card .num { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--danger); }
+    .step { border: 1px solid var(--line); border-radius: 9px; padding: 12px; margin-bottom: 10px; background: var(--bg); }
+    .step.done { border-color: #2c746f; }
+    .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; padding: 16px; overflow: auto; }
+    .audit-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 15px; }
+    .audit-card.action { border-color: var(--amber-dim); }
+    .audit-card.warn { border-color: #63312c; }
+    .audit-card .num { font-family: var(--display); font-size: 30px; font-weight: 700; margin-bottom: 4px; }
+    .audit-card .label { font-family: var(--display); font-size: 15px; font-weight: 600; }
+    .audit-card p { color: var(--txt-dim); line-height: 1.45; margin: 8px 0 12px; }
+    .empty { color: var(--txt-faint); text-align: center; padding: 24px; line-height: 1.5; }
+    .toast { position: fixed; bottom: 146px; left: 50%; transform: translateX(-50%); background: var(--raised-2); border: 1px solid var(--line); padding: 10px 15px; border-radius: 8px; opacity: 0; transition: 0.18s; z-index: 20; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-5px); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand"><div class="glyph">M</div><div class="brand-name">Media <b>Master</b></div></div>
+      <div class="search">⌕ <input id="searchInput" placeholder="Search filenames…" /></div>
+      <div class="modes" id="modeBar">
+        <button data-mode="browse" class="on">Browse</button>
+        <button data-mode="purge">Purge</button>
+        <button data-mode="tagging">Tagging</button>
+        <button data-mode="safe_delete">Safe Delete</button>
+        <button data-mode="audit">Audit</button>
+      </div>
+      <div class="spacer"></div>
+      <div class="pill"><span class="dot"></span>FFmpeg · 6.1.1</div>
+    </header>
+
+    <aside class="side" id="sidebar"></aside>
+
+    <main class="main">
+      <section class="screen on" id="screen-browse">
+        <div class="bar">
+          <div class="title">Browse</div>
+          <div class="muted" id="browseCount">28 items</div>
+          <div class="spacer"></div>
+          <button class="btn primary" id="startPurgeBtn">Start Purge Mode</button>
+        </div>
+        <div class="grid-wrap"><div class="grid" id="browseGrid"></div></div>
+      </section>
+
+      <section class="screen" id="screen-purge">
+        <div class="purge">
+          <div class="bar">
+            <div class="title">Purge Mode</div>
+            <div class="muted" id="purgeProgress">1 / 19 · 19 remaining · arrows make metadata decisions only</div>
+            <div class="spacer"></div>
+            <button class="btn" id="purgeUndoBtn">Undo</button>
+            <button class="btn primary" id="finishPurgeBtn">Finish Review</button>
+          </div>
+          <div class="purge-stage" id="purgeStage"></div>
+          <div class="kbdbar"><span class="kbd">←</span> reject <span class="kbd">→</span> keep <span class="kbd">↓</span> maybe <span class="kbd">Z</span> undo <span class="kbd">Enter</span> summary</div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-tagging">
+        <div class="bar">
+          <div class="title">Bulk Tagging Mode</div>
+          <div class="muted">Large thumbnails · click to select · assign subjects manually</div>
+          <div class="spacer"></div>
+          <select class="select"><option>Filter: Untagged AI renders</option><option>Filter: Keepers only</option></select>
+        </div>
+        <div class="tag-layout">
+          <div class="grid-wrap"><div class="grid tagging-grid" id="taggingGrid"></div></div>
+          <aside class="tag-panel" id="tagPanel"></aside>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-safe_delete">
+        <div class="bar">
+          <div class="title">Safe Delete Review</div>
+          <div class="muted">Rejects are previewed before moving to holding. Final delete is separate.</div>
+          <div class="spacer"></div>
+          <button class="btn" data-goto="purge">Back to Purge</button>
+        </div>
+        <div class="safe-layout">
+          <div class="grid-wrap"><div class="grid" id="safeGrid"></div></div>
+          <aside class="safe-side" id="safeSide"></aside>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-audit">
+        <div class="bar">
+          <div class="title">Media Audit</div>
+          <div class="muted">Cleanup opportunities generated from the local SQLite catalog</div>
+          <div class="spacer"></div>
+          <button class="btn primary">Run Audit</button>
+        </div>
+        <div class="audit-grid" id="auditGrid"></div>
+      </section>
+    </main>
+
+    <aside class="right" id="rightPanel"></aside>
+
+    <footer class="tray">
+      <div class="tray-head">
+        <span class="tray-title">Operations Queue</span>
+        <span class="muted">● Idle</span>
+        <div class="spacer"></div>
+        <button class="btn">Clear finished</button>
+      </div>
+      <div class="tray-body"><div class="empty">No active operations. Purge decisions, holding moves, tag assignments, and FFmpeg recipes appear here.</div></div>
+    </footer>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const HUES = [210, 275, 38, 168, 12, 330, 95, 250];
+    const TAGS = ["", "Subject A", "LoRA candidate", "Bad hands", "Keeper"];
+    const STATES = ["unreviewed", "keep", "reject", "maybe"];
+    const SOURCES = [
+      { id: "all", name: "All media", color: "#8a8f9b", count: 1712 },
+      { id: "renders", name: "Renders / ComfyUI", color: "#f2b84b", count: 684 },
+      { id: "phone", name: "Phone Backup", color: "#73a7ff", count: 412 },
+      { id: "camera", name: "Camera Dump", color: "#c77dff", count: 328 },
+    ];
+    const TAG_LIST = [
+      { name: "LoRA candidate", color: "#f2b84b", hotkey: "2", count: 91 },
+      { name: "Subject A", color: "#4fd1c5", hotkey: "1", count: 46 },
+      { name: "Bad hands", color: "#e5705b", hotkey: "3", count: 32 },
+      { name: "Keeper", color: "#7ddc83", hotkey: "4", count: 214 },
+    ];
+
+    let mode = "browse";
+    let items = Array.from({ length: 28 }, (_, i) => {
+      const isVideo = i % 3 === 0;
+      return {
+        id: String(i), name: `${isVideo ? "clip" : "img"}_${2480 + i}.${isVideo ? "mp4" : "png"}`,
+        ext: isVideo ? "MP4" : "PNG", kind: isVideo ? "video" : "image",
+        dim: ["2048×2048", "1080×1350", "3840×2160", "1920×1080"][i % 4],
+        sizeLabel: `${(2 + i * 0.7).toFixed(1)} MB`, state: STATES[i % 4], tag: TAGS[i % 5],
+        sourceName: SOURCES[(i % 3) + 1].name, selected: false, hue: HUES[i % HUES.length],
+      };
+    });
+    let purgeIndex = 0;
+    let purgeSession = items.filter(x => x.kind === "image");
+    let purgeCounts = { keep: 0, reject: 0, maybe: 0 };
+    let undoStack = [];
+    let selectedId = "0";
+
+    function grad(h) { return `linear-gradient(135deg, hsl(${h} 42% 34%), hsl(${(h + 48) % 360} 40% 15%))`; }
+    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); }
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll(".modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+      document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === "screen-" + m));
+      renderRight(); if (m === "purge") renderPurge(); if (m === "safe_delete") renderSafe();
+    }
+
+    function tileHTML(item, sel) {
+      const tagChip = item.tag ? `<span class="chip teal">${item.tag}</span>` : `<span class="chip amber">untagged</span>`;
+      return `<div class="tile${sel ? " sel" : ""}" data-id="${item.id}">
+        <div class="thumb" style="background:${grad(item.hue)}"><span class="badge">${item.ext}</span>
+        ${item.state !== "unreviewed" ? `<span class="state ${item.state}">${item.state}</span>` : ""}
+        <span class="check">✓</span></div>
+        <div class="cap"><div class="fn">${item.name}</div><div class="sub">${item.dim} · ${item.sizeLabel}</div><div class="chips">${tagChip}</div></div></div>`;
+    }
+
+    function renderSidebar() {
+      const counts = { keep: 0, reject: 0, maybe: 0 };
+      items.forEach(i => { if (counts[i.state] !== undefined) counts[i.state]++; });
+      document.getElementById("sidebar").innerHTML = `
+        <div class="side-head">Sources</div>
+        ${SOURCES.map((s, i) => `<div class="side-item${i === 0 ? " active" : ""}"><span class="sw" style="background:${s.color}"></span>${s.name}<span class="count">${s.count.toLocaleString()}</span></div>`).join("")}
+        <div class="side-head">Tags</div>
+        ${TAG_LIST.map(t => `<div class="side-item"><span class="sw" style="background:${t.color}"></span>${t.name}<span class="count">${t.count}</span></div>`).join("")}
+        <div class="side-head">Purge State</div>
+        <div class="side-item"><span class="sw" style="background:#7ddc83"></span>Keep<span class="count">${counts.keep}</span></div>
+        <div class="side-item"><span class="sw" style="background:#e5705b"></span>Reject<span class="count">${counts.reject}</span></div>
+        <div class="side-item"><span class="sw" style="background:#f2b84b"></span>Maybe<span class="count">${counts.maybe}</span></div>
+        <div class="side-head">Holding</div>
+        <div class="side-item"><span class="sw" style="background:#555b66"></span>Pending final review<span class="count">0</span></div>`;
+    }
+
+    function renderBrowse() {
+      document.getElementById("browseCount").textContent = `${items.length} items`;
+      const grid = document.getElementById("browseGrid");
+      grid.innerHTML = items.map(i => tileHTML(i, i.selected)).join("");
+      grid.querySelectorAll(".tile").forEach(el => el.addEventListener("click", () => {
+        const id = el.dataset.id;
+        items.forEach(i => i.selected = i.id === id);
+        selectedId = id; renderBrowse(); renderRight();
+      }));
+    }
+
+    function renderPurge() {
+      const cur = purgeSession[purgeIndex];
+      if (!cur) return;
+      document.getElementById("purgeProgress").textContent =
+        `${Math.min(purgeIndex + 1, purgeSession.length)} / ${purgeSession.length} · ${purgeSession.length - purgeIndex} remaining · arrows make metadata decisions only`;
+      document.getElementById("purgeStage").innerHTML = `
+        <div class="pile reject"><div class="big">${purgeCounts.reject}</div><div>marked reject</div>
+          <button class="btn danger" style="margin-top:14px" id="btnReject">← Reject</button></div>
+        <div class="hero" style="background:${grad(cur.hue)}">
+          <div class="decision left">REJECT</div><div class="decision right">KEEP</div>
+          <div class="mark">${cur.ext}</div>
+          <div class="hero-info"><div><div class="fn">${cur.name}</div>
+          <div class="muted">${cur.dim} · ${cur.ext} · ${cur.sizeLabel} · ${cur.sourceName}</div></div>
+          <div class="spacer"></div>${cur.tag ? `<span class="chip teal">${cur.tag}</span>` : `<span class="chip amber">untagged</span>`}
+          <span class="chip">${cur.state}</span></div></div>
+        <div class="pile keep"><div class="big">${purgeCounts.keep}</div><div>marked keep</div>
+          <button class="btn" style="margin-top:14px;color:var(--green)" id="btnKeep">Keep →</button></div>`;
+      document.getElementById("btnReject").onclick = () => applyPurge("reject");
+      document.getElementById("btnKeep").onclick = () => applyPurge("keep");
+    }
+
+    function applyPurge(state) {
+      const cur = purgeSession[purgeIndex]; if (!cur) return;
+      undoStack.push({ id: cur.id, from: cur.state, to: state });
+      cur.state = state; purgeCounts[state]++;
+      const item = items.find(i => i.id === cur.id); if (item) item.state = state;
+      purgeIndex++; renderSidebar(); renderPurge(); renderRight();
+      showToast(`Marked ${cur.name} as ${state}`);
+      if (purgeIndex >= purgeSession.length) showToast("Purge session complete — press Finish Review");
+    }
+
+    function renderTagging() {
+      document.getElementById("taggingGrid").innerHTML = items.map(i => tileHTML(i, i.selected)).join("");
+      document.getElementById("tagPanel").innerHTML = `
+        <div class="section">Selection</div>
+        <div class="summary-card"><div class="num">${items.filter(i => i.selected).length}</div><div class="muted">selected for tag assignment</div></div>
+        <button class="btn primary" style="width:100%;text-align:center;margin-bottom:10px">Assign to Tag</button>
+        <button class="btn" style="width:100%;text-align:center;margin-bottom:16px">Select visible untagged</button>
+        <div class="section">Tags</div>
+        <input class="input" value="new-subject-tag" />
+        <div style="height:10px"></div>
+        ${TAG_LIST.map(t => `<div class="tag-row"><span class="sw" style="background:${t.color}"></span>${t.name}<span class="hot">${t.hotkey}</span></div>`).join("")}`;
+    }
+
+    function renderSafe() {
+      const rejects = items.filter(i => i.state === "reject");
+      document.getElementById("safeGrid").innerHTML = rejects.length ? rejects.map(i => tileHTML(i, false)).join("") : '<div class="empty">No rejects yet. Use Purge Mode first.</div>';
+      const bytes = rejects.length * 3.2;
+      document.getElementById("safeSide").innerHTML = `
+        <div class="summary-card"><div class="num">${rejects.length}</div><div class="muted">rejects · ${bytes.toFixed(1)} GB affected</div></div>
+        <div class="step"><div class="title" style="font-size:13px">1. Preview affected files</div>
+          <p class="muted" style="margin-top:6px;line-height:1.5">Rescue anything that should not be removed from the reject batch.</p></div>
+        <div class="step done"><div class="title" style="font-size:13px">2. Move to holding folder</div>
+          <p class="muted" style="margin-top:6px;line-height:1.5">Files move into dated _MediaMaster_Holding folders with relative paths preserved.</p>
+          <button class="btn primary" style="margin-top:10px;width:100%;text-align:center" id="moveHolding">Move ${rejects.length} to Holding Folder</button></div>
+        <div class="step"><div class="title" style="font-size:13px">3. Final delete later</div>
+          <p class="muted" style="margin-top:6px;line-height:1.5">Browse the holding folder first. Restore all is always available.</p>
+          <button class="btn" disabled>Reveal Holding Folder</button> <button class="btn danger" disabled>Delete Holding Folder</button></div>`;
+      const btn = document.getElementById("moveHolding");
+      if (btn) btn.onclick = () => showToast("Queued holding-folder move. Final delete remains separate.");
+    }
+
+    function renderAudit() {
+      const rejectCount = items.filter(i => i.state === "reject").length;
+      const cards = [
+        { n: 420, label: "Untagged AI renders", p: "Likely ComfyUI outputs with no subject tag yet.", cls: "action", mode: "tagging", btn: "Open Tagging Mode", pri: true },
+        { n: 184, label: "Large videos", p: "Videos over 1 GB.", cls: "warn", mode: "browse", btn: "Review in Grid" },
+        { n: 62, label: "Huge PNG files", p: "Images over 20 MB.", cls: "action", mode: "browse", btn: "Convert to WebP" },
+        { n: rejectCount, label: "Rejects waiting", p: "Purge decisions exist but files not moved to holding.", cls: "action", mode: "safe_delete", btn: "Open Safe Delete", pri: true },
+        { n: 31, label: "Duplicate candidates", p: "Same filename + size groups.", cls: "", mode: "browse", btn: "Compare" },
+        { n: 19, label: "Not H.265", p: "Video files still using H.264.", cls: "", mode: "browse", btn: "Compress for Archive" },
+      ];
+      document.getElementById("auditGrid").innerHTML = cards.map(c =>
+        `<div class="audit-card ${c.cls}"><div class="num">${c.n}</div><div class="label">${c.label}</div><p>${c.p}</p>
+        <button class="btn ${c.pri ? "primary" : ""}" data-goto="${c.mode}">${c.btn}</button></div>`).join("");
+      document.querySelectorAll("#auditGrid [data-goto]").forEach(b => b.onclick = () => setMode(b.dataset.goto));
+    }
+
+    function renderRight() {
+      const el = document.getElementById("rightPanel");
+      if (mode === "browse") {
+        const item = items.find(i => i.id === selectedId) || items[0];
+        el.innerHTML = `<div class="panel-pad"><div class="preview" style="background:${grad(item.hue)}"><span class="badge">${item.ext}</span></div>
+          <div class="fn" style="margin-bottom:10px">${item.name}</div>
+          <table class="meta-table"><tr><td class="k">State</td><td class="v">${item.state}</td></tr>
+          <tr><td class="k">Tag</td><td class="v">${item.tag || "untagged"}</td></tr>
+          <tr><td class="k">Source</td><td class="v">${item.sourceName}</td></tr>
+          <tr><td class="k">Dims</td><td class="v">${item.dim}</td></tr>
+          <tr><td class="k">Size</td><td class="v">${item.sizeLabel}</td></tr></table>
+          <div class="section">Operations</div><div class="op-grid">
+          <div class="op-card"><div class="t">Compress archive</div><div class="d">Slice 8</div></div>
+          <div class="op-card"><div class="t">Make proxy</div><div class="d">Slice 8</div></div>
+          <div class="op-card"><div class="t">Images to WebP</div><div class="d">Slice 8</div></div>
+          <div class="op-card"><div class="t">Extract frames</div><div class="d">Slice 8</div></div></div>
+          <div class="section">Database</div><p class="muted" style="line-height:1.5">SQLite catalog at %APPDATA%/media_master.db</p></div>`;
+      } else if (mode === "purge") {
+        el.innerHTML = `<div class="panel-pad"><div class="section">Purge Summary</div>
+          <table class="meta-table"><tr><td class="k">Keep</td><td class="v" style="color:var(--green)">${purgeCounts.keep}</td></tr>
+          <tr><td class="k">Reject</td><td class="v" style="color:var(--danger)">${purgeCounts.reject}</td></tr>
+          <tr><td class="k">Maybe</td><td class="v">${purgeCounts.maybe}</td></tr></table>
+          <div class="section">Rule</div><p class="muted" style="line-height:1.5">Swipe left only marks reject. It never deletes. Deletion happens later through Safe Delete.</p></div>`;
+      } else if (mode === "tagging") {
+        el.innerHTML = `<div class="panel-pad"><div class="section">Tagging Workflow</div><p class="muted" style="line-height:1.5">Separate from Purge. Click thumbnails, then assign subject tags in bulk.</p></div>`;
+      } else if (mode === "safe_delete") {
+        el.innerHTML = `<div class="panel-pad"><div class="section">Safety Model</div><p class="muted" style="line-height:1.5">Rejects first move to holding. Restore all before any final delete.</p></div>`;
+      } else {
+        el.innerHTML = `<div class="panel-pad"><div class="section">Audit Actions</div><p class="muted" style="line-height:1.5">Cards open the right workflow instead of a generic report.</p></div>`;
+      }
+    }
+
+    document.getElementById("modeBar").addEventListener("click", e => { if (e.target.dataset.mode) setMode(e.target.dataset.mode); });
+    document.querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.goto)));
+    document.getElementById("startPurgeBtn").onclick = () => { purgeSession = items.filter(i => i.kind === "image"); purgeIndex = 0; setMode("purge"); };
+    document.getElementById("finishPurgeBtn").onclick = () => setMode("safe_delete");
+    document.getElementById("purgeUndoBtn").onclick = () => {
+      const last = undoStack.pop(); if (!last) return;
+      const item = items.find(i => i.id === last.id); if (item) item.state = last.from;
+      purgeCounts[last.to]--; purgeIndex = Math.max(0, purgeIndex - 1);
+      renderSidebar(); renderPurge(); showToast("Last purge decision undone");
+    };
+
+    document.addEventListener("keydown", e => {
+      if (mode !== "purge") return;
+      if (e.key === "ArrowLeft") applyPurge("reject");
+      if (e.key === "ArrowRight") applyPurge("keep");
+      if (e.key === "ArrowDown") applyPurge("maybe");
+      if (e.key === "Enter") setMode("safe_delete");
+      if (e.key.toLowerCase() === "z") document.getElementById("purgeUndoBtn").click();
+    });
+
+    renderSidebar(); renderBrowse(); renderTagging(); renderAudit(); renderRight();
+  </script>
+</body>
+</html>

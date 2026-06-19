@@ -1,6 +1,7 @@
 import type { AppMode } from "../../lib/types";
 import { useAppStore } from "../../stores/appStore";
 import { useLibraryStore } from "../../stores/libraryStore";
+import { FfmpegStatusIcon } from "./FfmpegStatusIcon";
 import { Kbd } from "../shared/Kbd";
 
 const MODES: Array<{ id: AppMode; label: string }> = [
@@ -14,7 +15,6 @@ const MODES: Array<{ id: AppMode; label: string }> = [
 export function TopBar() {
   const mode = useAppStore((state) => state.mode);
   const setMode = useAppStore((state) => state.setMode);
-  const ffmpegLabel = useAppStore((state) => state.ffmpegLabel);
   const search = useLibraryStore((state) => state.search);
   const setSearch = useLibraryStore((state) => state.setSearch);
 
@@ -52,10 +52,7 @@ export function TopBar() {
 
       <div className="spacer" />
 
-      <div className="pill">
-        <span className="dot" />
-        {ffmpegLabel}
-      </div>
+      <FfmpegStatusIcon />
     </header>
   );
 }

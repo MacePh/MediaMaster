@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MediaGrid } from "../../components/media/MediaGrid";
+import { useVisibleItems, useSelectedCount } from "../../hooks/useLibrarySelectors";
 import { useAppStore } from "../../stores/appStore";
 import { useJobsStore } from "../../stores/jobsStore";
 import { useLibraryStore } from "../../stores/libraryStore";
@@ -7,9 +8,9 @@ import { useLibraryStore } from "../../stores/libraryStore";
 export function TaggingMode() {
   const showToast = useAppStore((state) => state.showToast);
   const addJob = useJobsStore((state) => state.addJob);
-  const visibleItems = useLibraryStore((state) => state.visibleItems());
+  const visibleItems = useVisibleItems();
   const tags = useLibraryStore((state) => state.tags);
-  const selectedCount = useLibraryStore((state) => state.selectedCount());
+  const selectedCount = useSelectedCount();
   const toggleSelection = useLibraryStore((state) => state.toggleSelection);
   const assignTagToSelected = useLibraryStore((state) => state.assignTagToSelected);
   const selectUntaggedVisible = useLibraryStore((state) => state.selectUntaggedVisible);

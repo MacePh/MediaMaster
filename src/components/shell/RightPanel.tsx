@@ -1,7 +1,7 @@
 import { TagChip } from "../shared/TagChip";
+import { usePurgeSessionCounts } from "../../hooks/usePurgeSelectors";
 import { useAppStore } from "../../stores/appStore";
 import { useLibraryStore } from "../../stores/libraryStore";
-import { usePurgeStore } from "../../stores/purgeStore";
 
 function BrowseInspectorContent({ itemId }: { itemId: string }) {
   const item = useLibraryStore((state) =>
@@ -77,7 +77,7 @@ function BrowseInspectorContent({ itemId }: { itemId: string }) {
 }
 
 function PurgeInspector() {
-  const counts = usePurgeStore((state) => state.sessionCounts());
+  const counts = usePurgeSessionCounts();
 
   return (
     <div className="panel-pad">

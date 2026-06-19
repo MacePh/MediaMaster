@@ -1,5 +1,11 @@
 import { useEffect } from "react";
 import { gradientForHue } from "../../lib/mockData";
+import { useVisibleItems } from "../../hooks/useLibrarySelectors";
+import {
+  usePurgeCurrentItem,
+  usePurgeRemaining,
+  usePurgeSessionCounts,
+} from "../../hooks/usePurgeSelectors";
 import { Kbd } from "../../components/shared/Kbd";
 import { TagChip } from "../../components/shared/TagChip";
 import { useAppStore } from "../../stores/appStore";
@@ -14,24 +20,21 @@ export function PurgeMode() {
   const index = usePurgeStore((state) => state.index);
   const markCurrent = usePurgeStore((state) => state.markCurrent);
   const undo = usePurgeStore((state) => state.undo);
-  const currentItem = usePurgeStore((state) => state.currentItem);
-  const sessionCounts = usePurgeStore((state) => state.sessionCounts);
-  const remaining = usePurgeStore((state) => state.remaining);
   const startSession = usePurgeStore((state) => state.startSession);
-  const visibleItems = useLibraryStore((state) => state.visibleItems());
+  const visibleItems = useVisibleItems();
+  const current = usePurgeCurrentItem();
+  const counts = usePurgeSessionCounts();
+  const remaining = usePurgeRemaining();
+  const sessionComplete = sessionItems.length > 0 && index >= sessionItems.length;
 
   useEffect(() => {
     if (sessionItems.length === 0 && visibleItems.length > 0) {
       startSession(visibleItems.filter((item) => item.kind === "image"));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const current = currentItem();
-  const counts = sessionCounts();
+  }, [sessionItems.length, visibleItems, startSession]);
 
   const applyDecision = (state: "keep" | "reject" | "maybe") => {
-    if (!current) {
+    if (!current || sessionComplete) {
       return;
     }
 
@@ -63,9 +66,9 @@ export function PurgeMode() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id, index]);
+  }, [current?.id, index, sessionComplete]);
 
-  if (!current) {
+  if (sessionItems.length === 0) {
     return (
       <section className="screen on">
         <div className="bar">
@@ -77,6 +80,41 @@ export function PurgeMode() {
     );
   }
 
+  if (sessionComplete) {
+    return (
+      <section className="screen on">
+        <div className="bar">
+          <div className="title">Purge Mode — Review Complete</div>
+          <div className="muted">
+            {counts.keep} keep · {counts.reject} reject · {counts.maybe} maybe
+          </div>
+          <div className="spacer" />
+          <button className="btn" type="button" onClick={undo}>
+            Undo
+          </button>
+          <button className="btn primary" type="button" onClick={() => setMode("safe_delete")}>
+            Finish Review
+          </button>
+        </div>
+        <div className="empty">
+          All {sessionItems.length} items reviewed. Open Safe Delete to preview rejects.
+        </div>
+      </section>
+    );
+  }
+
+  if (!current) {
+    return (
+      <section className="screen on">
+        <div className="bar">
+          <div className="title">Purge Mode</div>
+          <div className="muted">Waiting for session…</div>
+        </div>
+        <div className="empty">Loading purge session…</div>
+      </section>
+    );
+  }
+
   return (
     <section className="screen on">
       <div className="purge">
@@ -84,7 +122,7 @@ export function PurgeMode() {
           <div className="title">Purge Mode</div>
           <div className="muted">
             {Math.min(index + 1, sessionItems.length)} / {sessionItems.length} ·{" "}
-            {remaining()} remaining · arrows make metadata decisions only
+            {remaining} remaining · arrows make metadata decisions only
           </div>
           <div className="spacer" />
           <button className="btn" type="button" onClick={undo}>

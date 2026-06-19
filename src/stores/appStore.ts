@@ -5,11 +5,12 @@ interface AppState {
   mode: AppMode;
   dbPath: string | null;
   migrationCount: number | null;
-  ffmpegLabel: string;
+  ffmpegReady: boolean;
+  ffmpegTooltip: string | null;
   toast: string | null;
   setMode: (mode: AppMode) => void;
   setDbStatus: (path: string, migrationCount: number) => void;
-  setFfmpegLabel: (label: string) => void;
+  setFfmpegStatus: (ready: boolean, tooltip?: string | null) => void;
   showToast: (message: string) => void;
   clearToast: () => void;
 }
@@ -18,11 +19,13 @@ export const useAppStore = create<AppState>((set) => ({
   mode: "browse",
   dbPath: null,
   migrationCount: null,
-  ffmpegLabel: "FFmpeg not detected",
+  ffmpegReady: false,
+  ffmpegTooltip: null,
   toast: null,
   setMode: (mode) => set({ mode }),
   setDbStatus: (path, migrationCount) => set({ dbPath: path, migrationCount }),
-  setFfmpegLabel: (ffmpegLabel) => set({ ffmpegLabel }),
+  setFfmpegStatus: (ffmpegReady, ffmpegTooltip = null) =>
+    set({ ffmpegReady, ffmpegTooltip }),
   showToast: (message) => set({ toast: message }),
   clearToast: () => set({ toast: null }),
 }));
