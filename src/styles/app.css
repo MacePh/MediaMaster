@@ -207,6 +207,35 @@ select {
   padding: 10px 8px 6px;
 }
 
+.side-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.side-add {
+  padding: 2px 8px;
+  font-size: 10px;
+  min-height: 0;
+}
+
+.side-scan {
+  margin: 0 8px 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--raised);
+  border: 1px solid var(--line-soft);
+  color: var(--txt-dim);
+  font-size: 11px;
+}
+
+.side-empty {
+  padding: 4px 12px 10px;
+  color: var(--txt-faint);
+  font-size: 12px;
+}
+
 .side-item {
   display: flex;
   align-items: center;
@@ -331,6 +360,23 @@ select {
   flex: 1;
   overflow: auto;
   padding: 16px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 280px;
+  text-align: center;
+  color: var(--txt-dim);
+}
+
+.empty-title {
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--txt);
 }
 
 .grid {

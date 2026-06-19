@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { detectFfmpeg, getDbStatus } from "../lib/tauri";
 import { JobTray } from "../components/shell/JobTray";
 import { RightPanel } from "../components/shell/RightPanel";
@@ -11,11 +12,42 @@ import { PurgeMode } from "../features/purge/PurgeMode";
 import { SafeDeleteMode } from "../features/safe-delete/SafeDeleteMode";
 import { TaggingMode } from "../features/tagging/TaggingMode";
 import { useAppStore } from "../stores/appStore";
+import { useLibraryStore } from "../stores/libraryStore";
+import type { ScanProgress } from "../lib/types";
 
 export function App() {
   const mode = useAppStore((state) => state.mode);
   const setDbStatus = useAppStore((state) => state.setDbStatus);
   const setFfmpegStatus = useAppStore((state) => state.setFfmpegStatus);
+  const showToast = useAppStore((state) => state.showToast);
+  const loadCatalog = useLibraryStore((state) => state.loadCatalog);
+  const setScanProgress = useLibraryStore((state) => state.setScanProgress);
+  const refreshMedia = useLibraryStore((state) => state.refreshMedia);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
+
+  useEffect(() => {
+    const unlisten = listen<ScanProgress>("scan:progress", (event) => {
+      setScanProgress(event.payload);
+
+      if (event.payload.phase === "done") {
+        void refreshMedia();
+        showToast(
+          `Scan complete — ${event.payload.added.toLocaleString()} added, ${event.payload.skipped.toLocaleString()} unchanged`,
+        );
+      }
+
+      if (event.payload.phase === "error") {
+        showToast(event.payload.error ?? "Scan failed");
+      }
+    });
+
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  }, [refreshMedia, setScanProgress, showToast]);
 
   useEffect(() => {
     void (async () => {

@@ -1,15 +1,29 @@
+import { open } from "@tauri-apps/plugin-dialog";
 import { create } from "zustand";
-import { createMockMediaItems, mockSources, mockTags } from "../lib/mockData";
-import type { MockMediaItem, MockSource, MockTag } from "../lib/types";
+import {
+  buildSourceNameMap,
+  mediaItemToCatalog,
+  toSidebarSources,
+} from "../lib/catalog";
+import { addSource, listMedia, listSources, listTags, scanSource } from "../lib/tauri";
+import type { MockMediaItem, MockSource, MockTag, ScanProgress } from "../lib/types";
 
 interface LibraryState {
   items: MockMediaItem[];
   sources: MockSource[];
+  rawSources: Array<{ id: string; name: string }>;
   tags: MockTag[];
   activeSourceId: string;
   search: string;
+  loading: boolean;
+  scanningSourceId: string | null;
+  scanProgress: ScanProgress | null;
   setSearch: (search: string) => void;
   setActiveSource: (sourceId: string) => void;
+  setScanProgress: (progress: ScanProgress | null) => void;
+  loadCatalog: () => Promise<void>;
+  refreshMedia: () => Promise<void>;
+  addSourceFromDialog: () => Promise<void>;
   toggleSelection: (id: string) => void;
   clearSelection: () => void;
   selectAllVisible: () => void;
@@ -23,13 +37,92 @@ interface LibraryState {
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
-  items: createMockMediaItems(),
-  sources: mockSources,
-  tags: mockTags,
+  items: [],
+  sources: [{ id: "all", name: "All media", color: "#8a8f9b", count: 0 }],
+  rawSources: [],
+  tags: [],
   activeSourceId: "all",
   search: "",
+  loading: false,
+  scanningSourceId: null,
+  scanProgress: null,
   setSearch: (search) => set({ search }),
-  setActiveSource: (activeSourceId) => set({ activeSourceId }),
+  setActiveSource: (activeSourceId) => {
+    set({ activeSourceId });
+    void get().refreshMedia();
+  },
+  setScanProgress: (scanProgress) => set({ scanProgress }),
+  loadCatalog: async () => {
+    set({ loading: true });
+    try {
+      const [sources, tags] = await Promise.all([listSources(), listTags()]);
+      set({
+        sources: toSidebarSources(sources),
+        rawSources: sources.map((source) => ({ id: source.id, name: source.name })),
+        tags: tags.map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          color: tag.color,
+          hotkey: tag.hotkey ?? undefined,
+          count: tag.count,
+        })),
+      });
+      await get().refreshMedia();
+    } finally {
+      set({ loading: false });
+    }
+  },
+  refreshMedia: async () => {
+    const { activeSourceId, search } = get();
+    const filter =
+      activeSourceId === "all" && !search
+        ? undefined
+        : {
+            sourceId: activeSourceId === "all" ? null : activeSourceId,
+            search: search || null,
+          };
+
+    const page = await listMedia(filter, 1, 500);
+    const sources = await listSources();
+    const sourceNames = buildSourceNameMap(sources);
+    const previousSelection = new Set(
+      get().items.filter((item) => item.selected).map((item) => item.id),
+    );
+
+    set({
+      sources: toSidebarSources(sources),
+      rawSources: sources.map((source) => ({ id: source.id, name: source.name })),
+      items: page.items.map((item) => {
+        const catalogItem = mediaItemToCatalog(item, sourceNames);
+        return {
+          ...catalogItem,
+          selected: previousSelection.has(item.id),
+        };
+      }),
+    });
+  },
+  addSourceFromDialog: async () => {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      title: "Choose source folder",
+    });
+
+    if (!selected || Array.isArray(selected)) {
+      return;
+    }
+
+    set({ scanningSourceId: null, scanProgress: null });
+    const source = await addSource(selected);
+    set({ scanningSourceId: source.id });
+
+    try {
+      await scanSource(source.id);
+      await get().loadCatalog();
+    } finally {
+      set({ scanningSourceId: null, scanProgress: null });
+    }
+  },
   toggleSelection: (id) =>
     set((state) => ({
       items: state.items.map((item) =>
@@ -89,9 +182,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const { items, activeSourceId, search } = get();
     return items.filter((item) => {
       const matchesSource =
-        activeSourceId === "all" ||
-        item.sourceName ===
-          mockSources.find((source) => source.id === activeSourceId)?.name;
+        activeSourceId === "all" || item.sourceId === activeSourceId;
       const matchesSearch =
         !search ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||

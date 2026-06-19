@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { mockSources } from "../lib/mockData";
 import { useLibraryStore } from "../stores/libraryStore";
 import type { MockMediaItem } from "../lib/types";
 
@@ -11,9 +10,7 @@ export function useVisibleItems(): MockMediaItem[] {
   return useMemo(() => {
     return items.filter((item) => {
       const matchesSource =
-        activeSourceId === "all" ||
-        item.sourceName ===
-          mockSources.find((source) => source.id === activeSourceId)?.name;
+        activeSourceId === "all" || item.sourceId === activeSourceId;
       const matchesSearch =
         !search ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||

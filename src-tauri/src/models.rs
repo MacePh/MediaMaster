@@ -260,3 +260,16 @@ pub struct DbStatus {
     pub path: String,
     pub migration_count: i64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanProgress {
+    pub source_id: String,
+    pub scanned: u64,
+    pub added: u64,
+    pub updated: u64,
+    pub skipped: u64,
+    pub phase: String,
+    pub current_path: Option<String>,
+    pub error: Option<String>,
+}

@@ -16,6 +16,7 @@ export interface MockMediaItem {
   sizeBytes: number;
   state: PurgeState;
   tag: string;
+  sourceId: string;
   sourceName: string;
   selected: boolean;
   hue: number;
@@ -82,9 +83,47 @@ export interface MediaFilter {
   search?: string | null;
 }
 
+export interface MediaItem {
+  id: string;
+  path: string;
+  name: string;
+  kind: MediaKind;
+  ext: string;
+  sizeBytes: number;
+  width?: number | null;
+  height?: number | null;
+  durationSec?: number | null;
+  codec?: string | null;
+  bitrate?: number | null;
+  fps?: number | null;
+  createdAt?: number | null;
+  modifiedAt?: number | null;
+  sourceId: string;
+  thumbPath?: string | null;
+  tags: string[];
+  collections: string[];
+  rating?: number | null;
+  favorite: boolean;
+  purgeState: PurgeState;
+  holdingBatchId?: string | null;
+  originalPath?: string | null;
+  lastReviewedAt?: number | null;
+}
+
 export interface MediaPage {
-  items: unknown[];
+  items: MediaItem[];
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface ScanProgress {
+  sourceId: string;
+  scanned: number;
+  added: number;
+  updated: number;
+  skipped: number;
+  phase: "scanning" | "done" | "error";
+  currentPath?: string | null;
+  error?: string | null;
 }
