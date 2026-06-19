@@ -1,0 +1,21 @@
+:root {
+  --bg: #0e0f13;
+  --panel: #16181f;
+  --raised: #1e2129;
+  --raised-2: #262a34;
+  --line: #2a2e38;
+  --line-soft: #21242c;
+  --txt: #e6e8ec;
+  --txt-dim: #9298a4;
+  --txt-faint: #5e6471;
+  --amber: #f2b84b;
+  --amber-dim: #6e5524;
+  --teal: #4fd1c5;
+  --danger: #e5705b;
+  --green: #7ddc83;
+  --blue: #73a7ff;
+  --radius: 8px;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+}
