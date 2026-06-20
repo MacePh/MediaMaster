@@ -32,8 +32,11 @@ export function mediaItemToCatalog(
     sizeBytes: item.sizeBytes,
     state: item.purgeState,
     tag: item.tags[0] ?? "",
+    tags: item.tags,
     sourceId: item.sourceId,
     sourceName: sourceNameById.get(item.sourceId) ?? "Unknown source",
+    filePath: item.path,
+    thumbPath: item.thumbPath,
     selected: false,
     hue: hashHue(item.id),
   };

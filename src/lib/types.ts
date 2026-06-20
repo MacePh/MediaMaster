@@ -16,8 +16,11 @@ export interface MockMediaItem {
   sizeBytes: number;
   state: PurgeState;
   tag: string;
+  tags: string[];
   sourceId: string;
   sourceName: string;
+  filePath: string;
+  thumbPath?: string | null;
   selected: boolean;
   hue: number;
 }
@@ -126,4 +129,9 @@ export interface ScanProgress {
   phase: "scanning" | "done" | "error";
   currentPath?: string | null;
   error?: string | null;
+}
+
+export interface ThumbnailResult {
+  mediaId: string;
+  thumbPath: string;
 }

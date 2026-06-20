@@ -1,3 +1,4 @@
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { TagChip } from "../shared/TagChip";
 import { usePurgeSessionCounts } from "../../hooks/usePurgeSelectors";
 import { useAppStore } from "../../stores/appStore";
@@ -12,14 +13,25 @@ function BrowseInspectorContent({ itemId }: { itemId: string }) {
     return <div className="empty">No media selected.</div>;
   }
 
+  const previewPath = item.filePath || item.thumbPath;
+  const previewSrc = previewPath ? convertFileSrc(previewPath) : null;
+  const usesGradientPreview = !previewSrc;
+
   return (
     <div className="panel-pad">
       <div
         className="preview"
-        style={{
-          background: `linear-gradient(135deg, hsl(${item.hue} 42% 34%), hsl(${(item.hue + 48) % 360} 40% 15%))`,
-        }}
+        style={
+          usesGradientPreview
+            ? {
+                background: `linear-gradient(135deg, hsl(${item.hue} 42% 34%), hsl(${(item.hue + 48) % 360} 40% 15%))`,
+              }
+            : undefined
+        }
       >
+        {previewSrc ? (
+          <img src={previewSrc} alt={item.name} className="preview-img" />
+        ) : null}
         <span className="badge">{item.ext}</span>
       </div>
       <div className="fn" style={{ marginBottom: 10 }}>
@@ -68,10 +80,6 @@ function BrowseInspectorContent({ itemId }: { itemId: string }) {
           <div className="d">Coming in Slice 8</div>
         </div>
       </div>
-      <div className="section">Database</div>
-      <p className="muted" style={{ lineHeight: 1.5 }}>
-        SQLite is initialized on startup. Real catalog data arrives in Slice 2.
-      </p>
     </div>
   );
 }
@@ -117,14 +125,14 @@ function PurgeInspector() {
 
 export function RightPanel() {
   const mode = useAppStore((state) => state.mode);
-  const selectedId = useLibraryStore(
-    (state) => state.items.find((item) => item.selected)?.id ?? state.items[0]?.id,
-  );
+  const focusedItemId = useLibraryStore((state) => state.focusedItemId);
+  const fallbackId = useLibraryStore((state) => state.items[0]?.id ?? null);
+  const inspectorId = focusedItemId ?? fallbackId;
 
   return (
     <aside className="right">
-      {mode === "browse" && selectedId ? (
-        <BrowseInspectorContent itemId={selectedId} />
+      {mode === "browse" && inspectorId ? (
+        <BrowseInspectorContent itemId={inspectorId} />
       ) : null}
       {mode === "purge" ? <PurgeInspector /> : null}
       {mode === "tagging" ? (

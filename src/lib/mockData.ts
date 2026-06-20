@@ -34,8 +34,10 @@ export function createMockMediaItems(count = 28): MockMediaItem[] {
       sizeBytes: Math.round((2 + index * 0.7) * 1024 * 1024),
       state,
       tag,
+      tags: tag ? [tag] : [],
       sourceName: mockSources[(index % 3) + 1]?.name ?? "All media",
       sourceId: mockSources[(index % 3) + 1]?.id ?? "all",
+      filePath: "",
       selected: false,
       hue: COLORS[index % COLORS.length] ?? 210,
     };

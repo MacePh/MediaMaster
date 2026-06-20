@@ -6,6 +6,7 @@ import type {
   MediaPage,
   Source,
   Tag,
+  ThumbnailResult,
 } from "./types";
 
 export async function getDbStatus(): Promise<DbStatus> {
@@ -38,6 +39,22 @@ export async function listMedia(
 
 export async function listTags(): Promise<Tag[]> {
   return invoke<Tag[]>("list_tags");
+}
+
+export async function createTag(
+  name: string,
+  color?: string | null,
+  hotkey?: string | null,
+): Promise<Tag> {
+  return invoke<Tag>("create_tag", { name, color, hotkey });
+}
+
+export async function assignTags(itemIds: string[], tagIds: string[]): Promise<void> {
+  return invoke("assign_tags", { itemIds, tagIds });
+}
+
+export async function ensureThumbnails(itemIds: string[]): Promise<ThumbnailResult[]> {
+  return invoke<ThumbnailResult[]>("ensure_thumbnails", { itemIds });
 }
 
 export async function detectFfmpeg(): Promise<FfmpegInfo> {

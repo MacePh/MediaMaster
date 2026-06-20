@@ -273,3 +273,10 @@ pub struct ScanProgress {
     pub current_path: Option<String>,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThumbnailResult {
+    pub media_id: String,
+    pub thumb_path: String,
+}

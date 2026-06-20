@@ -3,6 +3,7 @@ mod db;
 mod models;
 mod services;
 
+use commands::media::AppPaths;
 use db::Database;
 use std::sync::Mutex;
 use tauri::Manager;
@@ -21,7 +22,11 @@ pub fn run() {
             let database =
                 Database::open(&db_path).expect("failed to open SQLite database");
 
+            let thumb_cache_dir = app_data_dir.join("thumbs");
+            std::fs::create_dir_all(&thumb_cache_dir).ok();
+
             app.manage(Mutex::new(database));
+            app.manage(AppPaths { thumb_cache_dir });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -33,6 +38,7 @@ pub fn run() {
             commands::media::list_media,
             commands::media::get_media_item,
             commands::media::update_media_state,
+            commands::media::ensure_thumbnails,
             commands::tags::create_tag,
             commands::tags::rename_tag,
             commands::tags::list_tags,

@@ -1,8 +1,16 @@
 use crate::db::Database;
-use crate::models::{MediaFilter, MediaItem, MediaKind, MediaPage, MediaPatch, PurgeState};
+use crate::models::{MediaFilter, MediaItem, MediaKind, MediaPage, MediaPatch, PurgeState, ThumbnailResult};
+use crate::services::ffmpeg::{self, FfmpegOverrides};
+use crate::services::thumbnailer;
 use rusqlite::{params, params_from_iter, ToSql};
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
+
+pub struct AppPaths {
+    pub thumb_cache_dir: PathBuf,
+}
 
 fn parse_purge_state(value: &str) -> PurgeState {
     match value {
@@ -47,6 +55,45 @@ fn row_to_media_item(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItem> {
         original_path: row.get(20)?,
         last_reviewed_at: row.get(21)?,
     })
+}
+
+fn attach_tags(conn: &rusqlite::Connection, items: &mut [MediaItem]) -> Result<(), String> {
+    if items.is_empty() {
+        return Ok(());
+    }
+
+    let placeholders = std::iter::repeat("?")
+        .take(items.len())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let sql = format!(
+        "SELECT mt.media_id, t.name
+         FROM media_tags mt
+         JOIN tags t ON t.id = mt.tag_id
+         WHERE mt.media_id IN ({placeholders})
+         ORDER BY t.name ASC"
+    );
+
+    let ids: Vec<&str> = items.iter().map(|item| item.id.as_str()).collect();
+    let mut stmt = conn.prepare(&sql).map_err(|error| error.to_string())?;
+    let mut tag_map: HashMap<String, Vec<String>> = HashMap::new();
+
+    let rows = stmt
+        .query_map(params_from_iter(ids.iter()), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(|error| error.to_string())?;
+
+    for row in rows {
+        let (media_id, tag_name) = row.map_err(|error| error.to_string())?;
+        tag_map.entry(media_id).or_default().push(tag_name);
+    }
+
+    for item in items {
+        item.tags = tag_map.remove(&item.id).unwrap_or_default();
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -133,11 +180,16 @@ pub fn list_media(
     list_values.push(Box::new(offset));
 
     let mut stmt = conn.prepare(&list_sql).map_err(|error| error.to_string())?;
-    let items = stmt
-        .query_map(params_from_iter(list_values.iter().map(|value| value.as_ref())), row_to_media_item)
+    let mut items = stmt
+        .query_map(
+            params_from_iter(list_values.iter().map(|value| value.as_ref())),
+            row_to_media_item,
+        )
         .map_err(|error| error.to_string())?
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| error.to_string())?;
+
+    attach_tags(conn, &mut items)?;
 
     Ok(MediaPage {
         items,
@@ -148,19 +200,75 @@ pub fn list_media(
 }
 
 #[tauri::command]
+pub fn ensure_thumbnails(
+    item_ids: Vec<String>,
+    db: State<'_, Mutex<Database>>,
+    paths: State<'_, AppPaths>,
+) -> Result<Vec<ThumbnailResult>, String> {
+    let db = db.lock().map_err(|error| error.to_string())?;
+    let conn = db.conn();
+
+    let ffmpeg_override: Option<String> = conn
+        .query_row(
+            "SELECT value FROM app_settings WHERE key = 'ffmpeg_path'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+
+    let ffprobe_override: Option<String> = conn
+        .query_row(
+            "SELECT value FROM app_settings WHERE key = 'ffprobe_path'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+
+    let ffmpeg_info = ffmpeg::detect(FfmpegOverrides {
+        ffmpeg_path: ffmpeg_override,
+        ffprobe_path: ffprobe_override,
+    });
+
+    let ffmpeg_path = ffmpeg_info
+        .ffmpeg_path
+        .as_ref()
+        .map(PathBuf::from);
+
+    let generated = thumbnailer::ensure_thumbnails(
+        conn,
+        &paths.thumb_cache_dir,
+        &item_ids,
+        ffmpeg_path.as_deref(),
+    )?;
+
+    Ok(generated
+        .into_iter()
+        .map(|result| ThumbnailResult {
+            media_id: result.media_id,
+            thumb_path: result.thumb_path,
+        })
+        .collect())
+}
+
+#[tauri::command]
 pub fn get_media_item(id: String, db: State<'_, Mutex<Database>>) -> Result<MediaItem, String> {
     let db = db.lock().map_err(|error| error.to_string())?;
     let conn = db.conn();
 
-    conn.query_row(
-        "SELECT id, path, name, kind, ext, size_bytes, width, height, duration_sec,
+    let mut item = conn
+        .query_row(
+            "SELECT id, path, name, kind, ext, size_bytes, width, height, duration_sec,
                 codec, bitrate, fps, created_at, modified_at, source_id, thumb_path,
                 purge_state, rating, favorite, holding_batch_id, original_path, last_reviewed_at
          FROM media_items WHERE id = ?1",
-        params![id],
-        row_to_media_item,
-    )
-    .map_err(|error| error.to_string())
+            params![id],
+            row_to_media_item,
+        )
+        .map_err(|error| error.to_string())?;
+
+    attach_tags(conn, std::slice::from_mut(&mut item))?;
+
+    Ok(item)
 }
 
 #[tauri::command]

@@ -14,7 +14,7 @@ export function useVisibleItems(): MockMediaItem[] {
       const matchesSearch =
         !search ||
         item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.tag.toLowerCase().includes(search.toLowerCase());
+        item.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()));
       return matchesSource && matchesSearch;
     });
   }, [items, activeSourceId, search]);
