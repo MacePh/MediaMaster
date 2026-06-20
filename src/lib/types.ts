@@ -85,6 +85,37 @@ export interface MediaFilter {
   tagId?: string | null;
   search?: string | null;
   folderRelPath?: string | null;
+  itemIds?: string[] | null;
+}
+
+export type AuditFindingKind =
+  | "large_video"
+  | "large_image"
+  | "not_hevc"
+  | "duplicate_candidate"
+  | "untagged_ai_render"
+  | "rejects_pending"
+  | "holding_pending"
+  | "probe_failed";
+
+export type AuditSeverity = "info" | "warning" | "action";
+
+export type SuggestedAction =
+  | "review_grid"
+  | "purge"
+  | "tag"
+  | "compress"
+  | "safe_delete"
+  | "reveal";
+
+export interface AuditFinding {
+  id: string;
+  kind: AuditFindingKind;
+  label: string;
+  detail: string;
+  itemIds: string[];
+  severity: AuditSeverity;
+  suggestedAction: SuggestedAction;
 }
 
 export interface MediaPatch {

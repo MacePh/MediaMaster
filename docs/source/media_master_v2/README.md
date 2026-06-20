@@ -21,10 +21,10 @@ Core workflows (implementation status):
 2. **Purge** ✓ — keyboard culling; `purge_state` persisted to SQLite
 3. **Tagging** ✓ — create/assign tags; bulk tagging mode
 4. **Safe Delete** in progress — DB reject list; holding folder move
-5. **Audit** — stub UI; query backend not wired
+5. **Audit** — query-based findings from SQLite; cards navigate to Browse / Tagging / Safe Delete
 
 Stack: Tauri v2 · React + TypeScript · Rust · SQLite · FFmpeg/FFprobe (optional).
 
-**Current phase:** Slice 6 — Safe Delete. See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
+**Current phase:** Slice 8 — Jobs + FFmpeg. See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
 
 Open the HTML mockup in a browser to explore the UI shell before running the app.

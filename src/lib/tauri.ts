@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AuditFinding,
   DbStatus,
   FfmpegInfo,
   MediaFilter,
@@ -98,8 +99,12 @@ export async function listJobs(): Promise<unknown[]> {
   return invoke<unknown[]>("list_jobs");
 }
 
-export async function runMediaAudit(filter?: MediaFilter): Promise<unknown[]> {
-  return invoke<unknown[]>("run_media_audit", { filter });
+export async function runMediaAudit(filter?: MediaFilter): Promise<AuditFinding[]> {
+  return invoke<AuditFinding[]>("run_media_audit", { filter });
+}
+
+export async function listAuditFindings(filter?: MediaFilter): Promise<AuditFinding[]> {
+  return invoke<AuditFinding[]>("list_audit_findings", { filter });
 }
 
 export async function listHoldingBatches(): Promise<HoldingBatch[]> {
@@ -111,6 +116,10 @@ export async function moveToHolding(
   label: string,
 ): Promise<string> {
   return invoke<string>("move_to_holding", { itemIds, label });
+}
+
+export async function restoreHoldingBatch(batchId: string): Promise<string> {
+  return invoke<string>("restore_holding_batch", { batchId });
 }
 
 export async function finalDeleteHoldingBatch(batchId: string): Promise<string> {

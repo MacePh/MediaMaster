@@ -169,6 +169,23 @@ pub fn list_media(
                 values.push(Box::new(format!("{root}\\{rel}\\%")));
             }
         }
+        if let Some(item_ids) = filter.item_ids {
+            let ids: Vec<String> = item_ids
+                .into_iter()
+                .map(|id| id.trim().to_string())
+                .filter(|id| !id.is_empty())
+                .collect();
+            if !ids.is_empty() {
+                let placeholders = std::iter::repeat("?")
+                    .take(ids.len())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                where_clauses.push(format!("id IN ({placeholders})"));
+                for id in ids {
+                    values.push(Box::new(id));
+                }
+            }
+        }
     }
 
     let where_sql = if where_clauses.is_empty() {

@@ -2,7 +2,29 @@
 
 Running record of implementation slices and features. Complements the [spec](./MEDIA_MASTER_V2_SPEC.md) and [architecture](./MEDIA_MASTER_V2_ARCHITECTURE.md).
 
-**Current focus:** Slice 6 — Safe Delete (holding move + restore)
+**Current focus:** Slice 8 — Jobs + FFmpeg
+
+---
+
+## Slice 7 — Audit ✓
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `services/audit.rs` | Done | Query-based findings from SQLite |
+| `run_media_audit` | Done | Thresholds from `app_settings` |
+| Untagged AI renders | Done | Path heuristics + no tags |
+| Large videos / huge PNGs | Done | 1 GB / 20 MB defaults |
+| Rejects pending | Done | Links to Safe Delete |
+| Duplicate candidates | Done | Same name + size groups |
+| Not H.265 / probe pending | Done | Codec metadata queries |
+| Audit cards → modes | Done | `itemIds` filter + navigation |
+
+---
+
+## Slice 8 — Jobs + FFmpeg (next)
+
+- Job runner, tray UI; FFprobe batch metadata
+- Holding move as persisted background job
 
 ---
 
@@ -86,7 +108,7 @@ Running record of implementation slices and features. Complements the [spec](./M
 | `update_media_state` | Done | Direct persist path (not session API yet) |
 | Purge keyboard + undo UI | Done | Undo restores DB via `update_media_state` |
 | `start_purge_session` / `mark_purge_decision` | Stub | Session tables exist; commands return Slice 4 error |
-| `list_rejects` | **Slice 6** | Query rejects not yet in holding |
+| `list_rejects` | Done | Moved to Slice 6 |
 | Global purge sidebar counts | Planned | Counts reflect loaded page only |
 
 **Acceptance (partial):** Arrow keys persist across restart; undo works; rejects visible on tiles in Browse.
@@ -105,7 +127,7 @@ Running record of implementation slices and features. Complements the [spec](./M
 
 ---
 
-## Slice 6 — Safe Delete (in progress)
+## Slice 6 — Safe Delete ✓
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -114,17 +136,11 @@ Running record of implementation slices and features. Complements the [spec](./M
 | `preview_holding_move` | Done | Byte count + target holding roots |
 | `move_to_holding` | Done | `{sourceRoot}/_MediaMaster_Holding/{label}/` |
 | `list_holding_batches` | Done | Batch history from SQLite |
-| `restore_holding_batch` | Planned | Reverse move to `original_path` |
-| Reveal holding folder in UI | Planned | |
+| `restore_holding_batch` | Done | Reverse move to `original_path` |
+| Reveal holding folder in UI | Done | Open holding folder in Explorer |
+| Rescue to maybe | Done | Selected rejects in Safe Delete |
+| Sidebar holding list | Done | Restore per batch |
 | Final delete | Disabled | v1 safety constraint |
-
----
-
-## Slice 7–9 — Not started
-
-- **Audit:** query-based findings cards
-- **Jobs:** holding move as persisted job + tray progress
-- **Polish:** global empty/loading states, app icon
 
 ---
 
@@ -138,6 +154,7 @@ Running record of implementation slices and features. Complements the [spec](./M
 | `0f9ac68` | Thumbnails, tagging, browse UX |
 | `da5d453` | Folder tree, pagination, purge preview, context menu |
 | `10b15d4` | Purge persist, folder trees on startup, remove source |
+| `f7716ea` | Docs + Safe Delete holding move |
 
 ---
 

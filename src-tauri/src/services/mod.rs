@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod ffmpeg;
 pub mod folder_tree;
 pub mod holding;

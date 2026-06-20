@@ -236,6 +236,7 @@ pub struct MediaFilter {
     pub tag_id: Option<String>,
     pub search: Option<String>,
     pub folder_rel_path: Option<String>,
+    pub item_ids: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

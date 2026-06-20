@@ -109,7 +109,7 @@ src-tauri/
       thumbnailer.rs        # Image resize + FFmpeg frame extract
       folder_tree.rs        # Source subfolder tree from catalog paths
       holding.rs            # Holding folder move + preview
-      audit.rs              # Query-based finding generation (stub)
+      audit.rs              # Query-based finding generation
       ffmpeg.rs             # Binary detection (PATH + common Windows paths)
   migrations/
     0001_initial.sql        # All v1 tables + indexes
@@ -149,9 +149,9 @@ All frontend calls go through typed wrappers in `src/lib/tauri.ts` using `@tauri
 | Purge | `start_purge_session`, `mark_purge_decision`, … | Stub |
 | Tags | `create_tag`, `list_tags`, `assign_tags` | ✓ |
 | Safe Delete | `preview_holding_move`, `move_to_holding`, `list_holding_batches` | ✓ |
-| Safe Delete | `restore_holding_batch`, `final_delete_holding_batch` | Stub / disabled |
+| Safe Delete | `restore_holding_batch`, `final_delete_holding_batch` | ✓ restore / disabled delete |
 | Shell | `copy_image_to_clipboard` | ✓ |
-| Audit | `run_media_audit`, `list_audit_findings` | Stub |
+| Audit | `run_media_audit`, `list_audit_findings` | ✓ |
 | Jobs | `list_jobs` | Stub |
 | FFmpeg | `detect_ffmpeg` | ✓ |
 | Settings | `get_settings`, `set_setting` | ✓ |
@@ -290,8 +290,9 @@ App
 | 3 + 3b | ✓ Browse, thumbnails, folder tree, context menu, pagination |
 | 4 | Partial — `update_media_state`; session API stubbed |
 | 5 | Partial — create/assign tags |
-| 6 | **In progress** — holding move |
-| 7–9 | Not started |
+| 6 | ✓ Safe Delete — holding move + restore |
+| 7 | ✓ Audit dashboard |
+| 8–9 | Not started |
 
 See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
 

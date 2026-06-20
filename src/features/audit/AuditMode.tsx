@@ -1,75 +1,52 @@
-import { useAppStore } from "../../stores/appStore";
+import { useEffect } from "react";
+import type { AuditFinding, AuditSeverity, SuggestedAction } from "../../lib/types";
 import { useLibraryStore } from "../../stores/libraryStore";
 
-const AUDIT_CARDS = [
-  {
-    id: "untagged",
-    count: 420,
-    label: "Untagged AI renders",
-    detail: "Likely ComfyUI outputs with no subject or dataset tag yet.",
-    tone: "action" as const,
-    action: "tagging" as const,
-    button: "Open Tagging Mode",
-    primary: true,
-  },
-  {
-    id: "large-videos",
-    count: 184,
-    label: "Large videos",
-    detail: "Videos over 1 GB. Good candidates for archive compression.",
-    tone: "warn" as const,
-    action: "browse" as const,
-    button: "Review in Grid",
-    primary: false,
-  },
-  {
-    id: "huge-pngs",
-    count: 62,
-    label: "Huge PNG files",
-    detail: "Images over 20 MB. Convert keepers to WebP or archive originals.",
-    tone: "action" as const,
-    action: "browse" as const,
-    button: "Convert to WebP",
-    primary: false,
-  },
-  {
-    id: "rejects",
-    count: 0,
-    label: "Rejects waiting",
-    detail: "Purge decisions exist, but files have not been moved to holding.",
-    tone: "action" as const,
-    action: "safe_delete" as const,
-    button: "Open Safe Delete",
-    primary: true,
-  },
-  {
-    id: "duplicates",
-    count: 31,
-    label: "Duplicate candidates",
-    detail:
-      "Likely duplicates based on size, dimensions, name similarity, and modified time.",
-    tone: "default" as const,
-    action: "browse" as const,
-    button: "Compare",
-    primary: false,
-  },
-  {
-    id: "not-hevc",
-    count: 19,
-    label: "Not H.265",
-    detail: "Video files still using H.264 or older codecs.",
-    tone: "default" as const,
-    action: "browse" as const,
-    button: "Compress for Archive",
-    primary: false,
-  },
-];
+function severityTone(severity: AuditSeverity): "action" | "warn" | "default" {
+  if (severity === "action") {
+    return "action";
+  }
+  if (severity === "warning") {
+    return "warn";
+  }
+  return "default";
+}
+
+function actionButtonLabel(action: SuggestedAction): string {
+  switch (action) {
+    case "tag":
+      return "Open Tagging Mode";
+    case "safe_delete":
+      return "Open Safe Delete";
+    case "compress":
+      return "Review for Compression";
+    case "purge":
+      return "Open Purge Mode";
+    case "reveal":
+      return "Review in Grid";
+    case "review_grid":
+    default:
+      return "Review in Grid";
+  }
+}
+
+function isPrimaryFinding(finding: AuditFinding): boolean {
+  return (
+    finding.suggestedAction === "safe_delete" ||
+    finding.kind === "untagged_ai_render"
+  );
+}
 
 export function AuditMode() {
-  const setMode = useAppStore((state) => state.setMode);
-  const rejectCount = useLibraryStore(
-    (state) => state.items.filter((item) => item.state === "reject").length,
-  );
+  const findings = useLibraryStore((state) => state.auditFindings);
+  const loadingAudit = useLibraryStore((state) => state.loadingAudit);
+  const activeSourceId = useLibraryStore((state) => state.activeSourceId);
+  const loadAuditFindings = useLibraryStore((state) => state.loadAuditFindings);
+  const applyAuditFinding = useLibraryStore((state) => state.applyAuditFinding);
+
+  useEffect(() => {
+    void loadAuditFindings();
+  }, [loadAuditFindings, activeSourceId]);
 
   return (
     <section className="screen on">
@@ -77,31 +54,40 @@ export function AuditMode() {
         <div className="title">Media Audit</div>
         <div className="muted">
           Cleanup opportunities generated from the local SQLite catalog
+          {activeSourceId !== "all" ? " (scoped to active source)" : ""}
         </div>
         <div className="spacer" />
-        <button className="btn primary" type="button" disabled>
-          Run Audit
+        <button
+          className="btn primary"
+          type="button"
+          disabled={loadingAudit}
+          onClick={() => void loadAuditFindings()}
+        >
+          {loadingAudit ? "Running…" : "Run Audit"}
         </button>
       </div>
 
       <div className="audit-grid">
-        {AUDIT_CARDS.map((card) => {
-          const count = card.id === "rejects" ? rejectCount : card.count;
+        {findings.map((finding) => {
+          const count = finding.itemIds.length;
+          const tone = severityTone(finding.severity);
+          const primary = isPrimaryFinding(finding);
 
           return (
             <div
-              key={card.id}
-              className={`audit-card ${card.tone === "action" ? "action" : card.tone === "warn" ? "warn" : ""}`}
+              key={finding.id}
+              className={`audit-card ${tone === "action" ? "action" : tone === "warn" ? "warn" : ""}`}
             >
               <div className="num">{count}</div>
-              <div className="label">{card.label}</div>
-              <p>{card.detail}</p>
+              <div className="label">{finding.label}</div>
+              <p>{finding.detail}</p>
               <button
-                className={`btn ${card.primary ? "primary" : ""}`}
+                className={`btn ${primary ? "primary" : ""}`}
                 type="button"
-                onClick={() => setMode(card.action)}
+                disabled={count === 0}
+                onClick={() => void applyAuditFinding(finding)}
               >
-                {card.button}
+                {actionButtonLabel(finding.suggestedAction)}
               </button>
             </div>
           );

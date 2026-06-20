@@ -265,17 +265,15 @@ See [media-master-v2-mockup.html](./media-master-v2-mockup.html) for the interac
 
 - create_tag, assign_tags, tag filter; rename/remove stubbed
 
-### Phase 6 — Safe Delete (Slice 6) **← current**
+### Phase 6 — Safe Delete (Slice 6) ✓
 
-- Holding move per source root; preview + confirm; final delete disabled
+- Holding move per source root; preview + confirm; restore; final delete disabled
 
-**Status:** `list_rejects`, `move_to_holding`, `list_holding_batches` implemented. Restore stubbed.
+### Phase 7 — Audit (Slice 7) ✓
 
-### Phase 7 — Audit (Slice 7)
+- Query-based findings, navigable cards with `itemIds` filter
 
-- Query-based findings, navigable cards
-
-### Phase 8 — Jobs + FFmpeg (Slice 8)
+### Phase 8 — Jobs + FFmpeg (Slice 8) **← current**
 
 - Job runner, tray UI; FFprobe batch metadata
 
@@ -302,7 +300,7 @@ See [media-master-v2-mockup.html](./media-master-v2-mockup.html) for the interac
 
 ## Current implementation status (2026-06)
 
-Phases **0–3** and **3b** are shipped. **Phase 4–5** core paths work. **Phase 6** in progress.
+Phases **0–3**, **3b**, **6**, and **7** are shipped. **Phase 4–5** core paths work.
 
 | Area | Feature |
 |------|---------|
@@ -310,7 +308,8 @@ Phases **0–3** and **3b** are shipped. **Phase 4–5** core paths work. **Phas
 | Sources | Add/remove (catalog only), trees reload on startup |
 | Purge | Hero preview, persisted purge_state, undo |
 | Tagging | Create + assign + sidebar filter |
-| Safe Delete | DB-backed reject list; holding move (Slice 6) |
+| Safe Delete | DB-backed rejects; holding move + restore |
+| Audit | Query findings; navigate to fix workflows |
 
 See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md) for commits.
 
