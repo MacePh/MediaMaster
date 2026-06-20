@@ -44,6 +44,18 @@ export function PurgeMode() {
     showToast(`Marked ${current.name} as ${state}`);
   };
 
+  const handleUndo = () => {
+    const undoStack = usePurgeStore.getState().undoStack;
+    const last = undoStack[undoStack.length - 1];
+    if (!last) {
+      return;
+    }
+
+    undo();
+    updateItemState(last.itemId, last.previousState);
+    showToast("Last purge decision undone");
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
@@ -56,8 +68,7 @@ export function PurgeMode() {
         applyDecision("maybe");
       }
       if (event.key.toLowerCase() === "z") {
-        undo();
-        showToast("Last purge decision undone");
+        handleUndo();
       }
       if (event.key === "Enter") {
         setMode("safe_delete");
@@ -119,7 +130,7 @@ export function PurgeMode() {
             {counts.keep} keep · {counts.reject} reject · {counts.maybe} maybe
           </div>
           <div className="spacer" />
-          <button className="btn" type="button" onClick={undo}>
+          <button className="btn" type="button" onClick={handleUndo}>
             Undo
           </button>
           <button className="btn primary" type="button" onClick={() => setMode("safe_delete")}>
@@ -155,7 +166,7 @@ export function PurgeMode() {
             {remaining} remaining · arrows make metadata decisions only
           </div>
           <div className="spacer" />
-          <button className="btn" type="button" onClick={undo}>
+          <button className="btn" type="button" onClick={handleUndo}>
             Undo
           </button>
           <button className="btn primary" type="button" onClick={() => setMode("safe_delete")}>

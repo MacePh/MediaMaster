@@ -87,6 +87,12 @@ export interface MediaFilter {
   folderRelPath?: string | null;
 }
 
+export interface MediaPatch {
+  purgeState?: PurgeState | null;
+  favorite?: boolean | null;
+  rating?: number | null;
+}
+
 export interface SourceFolderNode {
   relPath: string;
   name: string;

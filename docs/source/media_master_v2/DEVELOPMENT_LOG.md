@@ -62,6 +62,15 @@ Running record of implementation slices and features added during build-out. Com
 | Reveal in Explorer | Done | `revealItemInDir` (Tauri opener plugin) |
 | Copy image to clipboard | Done | Rust `copy_image_to_clipboard` (arboard) — paste into other apps |
 
+### Slice 4 — Purge persistence (partial)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Persist `purge_state` to SQLite | Done | `update_media_state` on each keep/reject/maybe |
+| Folder trees on app restart | Done | `loadFolderTrees` runs during `loadCatalog` |
+| Remove source from library | Done | × button on hover; removes catalog rows, not files on disk |
+| Global purge count query | Planned | Sidebar counts still reflect loaded page only |
+
 ### Planned next (not yet built)
 
 - Context menu on viewer / purge hero

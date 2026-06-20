@@ -1,3 +1,4 @@
+import { ask } from "@tauri-apps/plugin-dialog";
 import { usePurgeCounts } from "../../hooks/useLibrarySelectors";
 import { useLibraryStore } from "../../stores/libraryStore";
 import { SourceFolderList } from "./SourceFolderList";
@@ -20,7 +21,18 @@ export function Sidebar() {
   const toggleSourceExpanded = useLibraryStore((state) => state.toggleSourceExpanded);
   const toggleFolderExpanded = useLibraryStore((state) => state.toggleFolderExpanded);
   const addSourceFromDialog = useLibraryStore((state) => state.addSourceFromDialog);
+  const removeSourceById = useLibraryStore((state) => state.removeSourceById);
   const counts = usePurgeCounts();
+
+  const confirmRemoveSource = async (sourceId: string, sourceName: string) => {
+    const confirmed = await ask(
+      `Remove "${sourceName}" from the library?\n\nFiles on disk are not deleted. Re-adding the same folder will scan it again.`,
+      { title: "Remove source", kind: "warning" },
+    );
+    if (confirmed) {
+      await removeSourceById(sourceId);
+    }
+  };
 
   const scanningLabel =
     scanProgress && scanProgress.phase === "scanning"
@@ -91,8 +103,20 @@ export function Sidebar() {
                 <span className="side-folder-spacer" />
               )}
               <span className="sw" style={{ background: source.color }} />
-              {source.name}
+              <span className="side-source-name">{source.name}</span>
               <span className="count">{source.count.toLocaleString()}</span>
+              <button
+                type="button"
+                className="side-remove"
+                aria-label={`Remove ${source.name}`}
+                title="Remove from library"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void confirmRemoveSource(source.id, source.name);
+                }}
+              >
+                ×
+              </button>
             </div>
             {hasFolders && isExpanded ? (
               <SourceFolderList

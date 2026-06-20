@@ -695,6 +695,43 @@ select {
   color: var(--amber);
 }
 
+.state.unreviewed {
+  display: none;
+}
+
+.side-source-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side-remove {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--txt-faint);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0;
+}
+
+.side-item:hover .side-remove,
+.side-remove:focus-visible {
+  opacity: 1;
+}
+
+.side-remove:hover {
+  color: var(--danger);
+  background: #e5705b22;
+}
+
 .check {
   position: absolute;
   inset: auto 7px 7px auto;

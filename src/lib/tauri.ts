@@ -3,7 +3,9 @@ import type {
   DbStatus,
   FfmpegInfo,
   MediaFilter,
+  MediaItem,
   MediaPage,
+  MediaPatch,
   Source,
   SourceFolderNode,
   Tag,
@@ -36,6 +38,10 @@ export async function listMedia(
   pageSize?: number,
 ): Promise<MediaPage> {
   return invoke<MediaPage>("list_media", { filter, page, pageSize });
+}
+
+export async function updateMediaState(id: string, patch: MediaPatch): Promise<MediaItem> {
+  return invoke<MediaItem>("update_media_state", { id, patch });
 }
 
 export async function listSourceFolders(sourceId: string): Promise<SourceFolderNode[]> {

@@ -294,9 +294,55 @@ pub fn get_media_item(id: String, db: State<'_, Mutex<Database>>) -> Result<Medi
 
 #[tauri::command]
 pub fn update_media_state(
-    _id: String,
-    _patch: MediaPatch,
-    _db: State<'_, Mutex<Database>>,
+    id: String,
+    patch: MediaPatch,
+    db: State<'_, Mutex<Database>>,
 ) -> Result<MediaItem, String> {
-    Err("Media updates are not implemented yet (Slice 4)".into())
+    {
+        let db = db.lock().map_err(|error| error.to_string())?;
+        let conn = db.conn();
+
+        if let Some(purge_state) = patch.purge_state {
+            let state_value = match purge_state {
+                PurgeState::Keep => "keep",
+                PurgeState::Reject => "reject",
+                PurgeState::Maybe => "maybe",
+                PurgeState::Unreviewed => "unreviewed",
+            };
+            let reviewed_at = if matches!(purge_state, PurgeState::Unreviewed) {
+                None
+            } else {
+                Some(
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|duration| duration.as_secs() as i64)
+                        .unwrap_or(0),
+                )
+            };
+
+            conn.execute(
+                "UPDATE media_items SET purge_state = ?1, last_reviewed_at = ?2 WHERE id = ?3",
+                params![state_value, reviewed_at, id],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+
+        if let Some(favorite) = patch.favorite {
+            conn.execute(
+                "UPDATE media_items SET favorite = ?1 WHERE id = ?2",
+                params![i64::from(favorite), id],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+
+        if let Some(rating) = patch.rating {
+            conn.execute(
+                "UPDATE media_items SET rating = ?1 WHERE id = ?2",
+                params![rating, id],
+            )
+            .map_err(|error| error.to_string())?;
+        }
+    }
+
+    get_media_item(id, db)
 }

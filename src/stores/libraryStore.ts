@@ -13,7 +13,9 @@ import {
   listSourceFolders,
   listSources,
   listTags,
+  removeSource,
   scanSource,
+  updateMediaState,
 } from "../lib/tauri";
 import type {
   MediaFilter,
@@ -105,10 +107,12 @@ interface LibraryState {
   selectVisibleRange: (fromId: string, toId: string) => void;
   exitSelectMode: () => void;
   loadCatalog: () => Promise<void>;
+  loadFolderTrees: () => Promise<void>;
   refreshTags: () => Promise<void>;
   refreshMedia: () => Promise<void>;
   loadMoreMedia: () => Promise<void>;
   addSourceFromDialog: () => Promise<void>;
+  removeSourceById: (sourceId: string) => Promise<void>;
   createTagByName: (name: string) => Promise<MockTag>;
   assignTagToSelected: (tagId: string) => Promise<number>;
   toggleSelection: (id: string) => void;
@@ -425,10 +429,51 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           count: tag.count,
         })),
       });
+      void get().loadFolderTrees();
       await get().refreshMedia();
     } finally {
       set({ loading: false });
     }
+  },
+  loadFolderTrees: async () => {
+    const sourceIds = get().rawSources.map((source) => source.id);
+    if (sourceIds.length === 0) {
+      set({ folderTrees: {} });
+      return;
+    }
+
+    const entries = await Promise.all(
+      sourceIds.map(async (sourceId) => {
+        const tree = await listSourceFolders(sourceId);
+        return [sourceId, tree] as const;
+      }),
+    );
+
+    const folderTrees = Object.fromEntries(entries);
+
+    // #region agent log
+    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
+      body: JSON.stringify({
+        sessionId: "c5832c",
+        location: "libraryStore.ts:loadFolderTrees",
+        message: "folder trees loaded on startup",
+        data: {
+          sourceCount: sourceIds.length,
+          trees: entries.map(([sourceId, tree]) => ({
+            sourceId,
+            rootCount: tree.length,
+          })),
+        },
+        timestamp: Date.now(),
+        hypothesisId: "H-folders-restart",
+        runId: "post-fix-2",
+      }),
+    }).catch(() => {});
+    // #endregion
+
+    set({ folderTrees });
   },
   refreshMedia: async () => {
     const generation = get().mediaRefreshGeneration;
@@ -591,6 +636,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       set({ scanningSourceId: null, scanProgress: null });
     }
   },
+  removeSourceById: async (sourceId) => {
+    await removeSource(sourceId);
+    cancelBackgroundPrefetch();
+    set((state) => {
+      const nextFolderTrees = { ...state.folderTrees };
+      delete nextFolderTrees[sourceId];
+      const nextExpandedSources = { ...state.expandedSources };
+      delete nextExpandedSources[sourceId];
+
+      return {
+        folderTrees: nextFolderTrees,
+        expandedSources: nextExpandedSources,
+        activeSourceId: state.activeSourceId === sourceId ? "all" : state.activeSourceId,
+        activeFolderRelPath: state.activeSourceId === sourceId ? null : state.activeFolderRelPath,
+        mediaRefreshGeneration: state.mediaRefreshGeneration + 1,
+      };
+    });
+    await get().loadCatalog();
+  },
   createTagByName: async (name) => {
     const tag = await createTag(name);
     const mapped = {
@@ -672,12 +736,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         })),
       };
     }),
-  updateItemState: (id, nextState) =>
+  updateItemState: (id, nextState) => {
     set((state) => ({
       items: state.items.map((item) =>
         item.id === id ? { ...item, state: nextState } : item,
       ),
-    })),
+    }));
+
+    void updateMediaState(id, { purgeState: nextState }).catch(() => {});
+  },
   visibleItems: () => get().items,
   selectedCount: () => get().items.filter((item) => item.selected).length,
   purgeCounts: () => {
