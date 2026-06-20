@@ -15,14 +15,16 @@ Product documentation for the Media Master v2 local-first media cleanup cockpit.
 
 Media Master v2 is a **Windows-first desktop triage cockpit** for messy AI image/video folders, camera dumps, and phone backups. It is not a file manager — it is a decision engine backed by a local SQLite catalog.
 
-Core workflows:
+Core workflows (implementation status):
 
-1. **Browse** — scan sources, thumbnail grid, inspect metadata, multi-select
-2. **Purge** — keyboard culling (← reject, → keep, ↓ maybe); metadata only, never deletes
-3. **Tagging** — bulk subject/dataset tagging separate from purge decisions
-4. **Safe Delete** — move rejects to per-source `_MediaMaster_Holding/` folders; restore before any final delete
-5. **Audit** — actionable cleanup cards driven by catalog queries
+1. **Browse** ✓ — scan, thumbnail grid, folder tree, tag filter, pagination, context menu, viewer
+2. **Purge** ✓ — keyboard culling; `purge_state` persisted to SQLite
+3. **Tagging** ✓ — create/assign tags; bulk tagging mode
+4. **Safe Delete** in progress — DB reject list; holding folder move
+5. **Audit** — stub UI; query backend not wired
 
 Stack: Tauri v2 · React + TypeScript · Rust · SQLite · FFmpeg/FFprobe (optional).
+
+**Current phase:** Slice 6 — Safe Delete. See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
 
 Open the HTML mockup in a browser to explore the UI shell before running the app.

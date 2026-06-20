@@ -149,3 +149,21 @@ export interface ThumbnailResult {
   mediaId: string;
   thumbPath: string;
 }
+
+export interface HoldingPreview {
+  itemIds: string[];
+  totalBytes: number;
+  targetRoots: string[];
+}
+
+export type HoldingBatchStatus = "staged" | "moved" | "restored" | "deleted";
+
+export interface HoldingBatch {
+  id: string;
+  label: string;
+  holdingPath: string;
+  itemIds: string[];
+  originalToHolding: Record<string, string>;
+  createdAt: number;
+  status: HoldingBatchStatus;
+}

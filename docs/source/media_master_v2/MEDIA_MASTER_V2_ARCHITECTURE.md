@@ -45,7 +45,7 @@ flowchart LR
 | Layer | Technology |
 |-------|------------|
 | Shell | Tauri v2 |
-| Frontend | React 18, TypeScript, Vite |
+| Frontend | React 19, TypeScript, Vite |
 | State | Zustand (domain stores) |
 | Backend | Rust |
 | Database | SQLite via `rusqlite` |
@@ -63,8 +63,8 @@ src/
     App.tsx                 # Shell, mode router, startup init
     main.tsx
   components/
-    shell/                  # TopBar, Sidebar, RightPanel, JobTray
-    media/                  # MediaGrid, MediaTile
+    shell/                  # TopBar, Sidebar, SourceFolderList, RightPanel, JobTray
+    media/                  # MediaGrid, MediaTile, MediaViewerModal, MediaContextMenu
     shared/                 # Kbd, TagChip, Toast
   features/
     browse/                 # BrowseMode
@@ -91,11 +91,12 @@ src-tauri/
     main.rs
     models.rs               # Shared Rust structs + enums
     commands/
-      scan.rs               # add_source, scan_source, list_sources
-      media.rs              # list_media, get_media_item, update_media_state
+      scan.rs               # add/remove/list sources, scan_source, list_source_folders
+      media.rs              # list_media, get_media_item, update_media_state, ensure_thumbnails
       tags.rs               # create_tag, assign_tags, list_tags
-      purge.rs              # start/mark/undo/finish session
-      safe_delete.rs        # preview, move, restore holding batches
+      purge.rs              # list_rejects (+ session stubs)
+      safe_delete.rs        # preview/move/list holding batches
+      shell.rs              # copy_image_to_clipboard
       audit.rs              # run_media_audit, list_audit_findings
       jobs.rs               # list_jobs
       ffmpeg.rs             # detect_ffmpeg
@@ -106,10 +107,10 @@ src-tauri/
     services/
       scanner.rs            # Recursive walk, upsert media_items
       thumbnailer.rs        # Image resize + FFmpeg frame extract
-      safe_delete.rs        # Holding move/restore logic
-      audit.rs              # Query-based finding generation
+      folder_tree.rs        # Source subfolder tree from catalog paths
+      holding.rs            # Holding folder move + preview
+      audit.rs              # Query-based finding generation (stub)
       ffmpeg.rs             # Binary detection (PATH + common Windows paths)
-      job_runner.rs         # Single-thread job queue
   migrations/
     0001_initial.sql        # All v1 tables + indexes
 ```
@@ -139,20 +140,22 @@ Indexes on `media_items(source_id)`, `media_items(purge_state)`, `media_tags(tag
 
 All frontend calls go through typed wrappers in `src/lib/tauri.ts` using `@tauri-apps/api/core` `invoke`.
 
-| Area | Commands |
-|------|----------|
-| Sources | `add_source`, `remove_source`, `list_sources` |
-| Scan | `scan_source` (async, emits `scan:progress`) |
-| Media | `list_media`, `get_media_item`, `update_media_state` |
-| Thumbs | `get_thumbnail_path` (lazy generate + cache) |
-| Purge | `start_purge_session`, `mark_purge_decision`, `undo_purge_decision`, `finish_purge_session`, `list_rejects` |
-| Tags | `create_tag`, `rename_tag`, `list_tags`, `assign_tags`, `remove_tags`, `set_tag_hotkey` |
-| Safe Delete | `preview_holding_move`, `move_to_holding`, `list_holding_batches`, `restore_holding_batch`, `final_delete_holding_batch` |
-| Audit | `run_media_audit`, `list_audit_findings`, `dismiss_audit_finding` |
-| Jobs | `list_jobs` |
-| FFmpeg | `detect_ffmpeg` |
-| Settings | `get_settings`, `set_setting` |
-| DB | `get_db_status` |
+| Area | Commands | Status |
+|------|----------|--------|
+| Sources | `add_source`, `remove_source`, `list_sources`, `list_source_folders` | ✓ |
+| Scan | `scan_source` (emits `scan:progress`) | ✓ |
+| Media | `list_media`, `get_media_item`, `update_media_state`, `ensure_thumbnails` | ✓ |
+| Purge | `list_rejects` | ✓ |
+| Purge | `start_purge_session`, `mark_purge_decision`, … | Stub |
+| Tags | `create_tag`, `list_tags`, `assign_tags` | ✓ |
+| Safe Delete | `preview_holding_move`, `move_to_holding`, `list_holding_batches` | ✓ |
+| Safe Delete | `restore_holding_batch`, `final_delete_holding_batch` | Stub / disabled |
+| Shell | `copy_image_to_clipboard` | ✓ |
+| Audit | `run_media_audit`, `list_audit_findings` | Stub |
+| Jobs | `list_jobs` | Stub |
+| FFmpeg | `detect_ffmpeg` | ✓ |
+| Settings | `get_settings`, `set_setting` | ✓ |
+| DB | `get_db_status` | ✓ |
 
 ### Events (subscribed on startup)
 
@@ -242,7 +245,7 @@ No React Router. `appStore.mode` selects which feature component renders in `<ma
 | Store | Responsibility |
 |-------|----------------|
 | `appStore` | `AppMode`, toast, DB path, FFmpeg label |
-| `libraryStore` | sources, tags, items, selection, search, filters |
+| `libraryStore` | sources, tags, items, folder trees, filters, pagination, rejects, selection |
 | `purgeStore` | session item list, index, decisions, undo stack |
 | `jobsStore` | operations queue rows |
 
@@ -270,14 +273,27 @@ App
 | Scan concurrency | Background thread + batched upserts | Avoid blocking UI on 10k+ files |
 | Permanent delete | Disabled | Safety-first v1 checkpoint |
 | Audit persistence | Computed on demand | Avoid stale finding tables; defer `audit_findings` table |
-| Pagination | 200 items/page | Large library performance |
+| Pagination | 100 items/page (200 max) | Large library performance; background prefetch |
 
 ## Security & filesystem
 
 - All file operations use absolute paths validated against registered sources
 - Holding moves never cross source roots in a single batch (v1)
 - No network calls required for core workflows
-- Tauri capabilities: `dialog` (folder picker), `opener` (reveal in Explorer)
+- Tauri capabilities: `dialog`, `opener` (reveal in Explorer + default open)
+
+## Implementation progress
+
+| Slice | Status |
+|-------|--------|
+| 0–2 | ✓ Shipped |
+| 3 + 3b | ✓ Browse, thumbnails, folder tree, context menu, pagination |
+| 4 | Partial — `update_media_state`; session API stubbed |
+| 5 | Partial — create/assign tags |
+| 6 | **In progress** — holding move |
+| 7–9 | Not started |
+
+See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
 
 ## Build & dev
 

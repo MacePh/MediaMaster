@@ -11,12 +11,7 @@ export function useSelectedCount(): number {
 }
 
 export function useRejectedItems(): MockMediaItem[] {
-  const items = useLibraryStore((state) => state.items);
-
-  return useMemo(
-    () => items.filter((item) => item.state === "reject"),
-    [items],
-  );
+  return useLibraryStore((state) => state.rejectItems);
 }
 
 export function usePurgeCounts(): { keep: number; reject: number; maybe: number } {

@@ -83,32 +83,6 @@ export function PurgeMode() {
   const previewPath = current?.filePath || current?.thumbPath;
   const previewSrc = previewPath ? convertFileSrc(previewPath) : null;
 
-  useEffect(() => {
-    if (!current) {
-      return;
-    }
-
-    // #region agent log
-    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-      body: JSON.stringify({
-        sessionId: "c5832c",
-        location: "PurgeMode.tsx:preview",
-        message: "purge hero preview",
-        data: {
-          itemId: current.id,
-          filePath: current.filePath ?? null,
-          thumbPath: current.thumbPath ?? null,
-          hasPreviewSrc: Boolean(previewSrc),
-        },
-        timestamp: Date.now(),
-        hypothesisId: "H1-purge-preview",
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, [current?.id, current?.filePath, current?.thumbPath, previewSrc]);
-
   if (sessionItems.length === 0) {
     return (
       <section className="screen on">

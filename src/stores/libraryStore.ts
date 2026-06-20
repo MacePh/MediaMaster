@@ -10,9 +10,11 @@ import {
   createTag,
   ensureThumbnails,
   listMedia,
+  listRejects,
   listSourceFolders,
   listSources,
   listTags,
+  moveToHolding,
   removeSource,
   scanSource,
   updateMediaState,
@@ -89,6 +91,9 @@ interface LibraryState {
   loading: boolean;
   loadingMore: boolean;
   refreshingMedia: boolean;
+  rejectItems: MockMediaItem[];
+  loadingRejects: boolean;
+  movingToHolding: boolean;
   scanningSourceId: string | null;
   scanProgress: ScanProgress | null;
   focusedItemId: string | null;
@@ -111,6 +116,8 @@ interface LibraryState {
   refreshTags: () => Promise<void>;
   refreshMedia: () => Promise<void>;
   loadMoreMedia: () => Promise<void>;
+  loadRejects: () => Promise<void>;
+  moveAllRejectsToHolding: (label?: string) => Promise<string | null>;
   addSourceFromDialog: () => Promise<void>;
   removeSourceById: (sourceId: string) => Promise<void>;
   createTagByName: (name: string) => Promise<MockTag>;
@@ -154,21 +161,6 @@ async function generateMissingThumbnails(
   if (missing.length === 0) {
     return;
   }
-
-  // #region agent log
-  fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-    body: JSON.stringify({
-      sessionId: "c5832c",
-      location: "libraryStore.ts:generateMissingThumbnails",
-      message: "thumb batch start",
-      data: { missingCount: missing.length, batchSize: THUMB_BATCH_SIZE },
-      timestamp: Date.now(),
-      hypothesisId: "H3-crash",
-    }),
-  }).catch(() => {});
-  // #endregion
 
   for (let index = 0; index < missing.length; index += THUMB_BATCH_SIZE) {
     const batch = missing.slice(index, index + THUMB_BATCH_SIZE);
@@ -214,6 +206,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   loading: false,
   loadingMore: false,
   refreshingMedia: false,
+  rejectItems: [],
+  loadingRejects: false,
+  movingToHolding: false,
   scanningSourceId: null,
   scanProgress: null,
   focusedItemId: null,
@@ -252,20 +247,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       refreshingMedia: true,
       mediaRefreshGeneration: get().mediaRefreshGeneration + 1,
     });
-    // #region agent log
-    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-      body: JSON.stringify({
-        sessionId: "c5832c",
-        location: "libraryStore.ts:setActiveFolder",
-        message: "folder filter set",
-        data: { sourceId, relPath },
-        timestamp: Date.now(),
-        hypothesisId: "H2-folders",
-      }),
-    }).catch(() => {});
-    // #endregion
     void get().refreshMedia();
   },
   setActiveTag: (tagId) => {
@@ -279,20 +260,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       refreshingMedia: true,
       mediaRefreshGeneration: get().mediaRefreshGeneration + 1,
     });
-    // #region agent log
-    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-      body: JSON.stringify({
-        sessionId: "c5832c",
-        location: "libraryStore.ts:setActiveTag",
-        message: "tag filter toggled",
-        data: { tagId, activeTagId: nextTagId },
-        timestamp: Date.now(),
-        hypothesisId: "H4-tags",
-      }),
-    }).catch(() => {});
-    // #endregion
     void get().refreshMedia();
   },
   toggleSourceExpanded: async (sourceId) => {
@@ -306,20 +273,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
     if (!get().folderTrees[sourceId]) {
       const tree = await listSourceFolders(sourceId);
-      // #region agent log
-      fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-        body: JSON.stringify({
-          sessionId: "c5832c",
-          location: "libraryStore.ts:toggleSourceExpanded",
-          message: "folder tree loaded",
-          data: { sourceId, rootCount: tree.length },
-          timestamp: Date.now(),
-          hypothesisId: "H2-folders",
-        }),
-      }).catch(() => {});
-      // #endregion
       set((state) => ({
         folderTrees: { ...state.folderTrees, [sourceId]: tree },
       }));
@@ -451,28 +404,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
     const folderTrees = Object.fromEntries(entries);
 
-    // #region agent log
-    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-      body: JSON.stringify({
-        sessionId: "c5832c",
-        location: "libraryStore.ts:loadFolderTrees",
-        message: "folder trees loaded on startup",
-        data: {
-          sourceCount: sourceIds.length,
-          trees: entries.map(([sourceId, tree]) => ({
-            sourceId,
-            rootCount: tree.length,
-          })),
-        },
-        timestamp: Date.now(),
-        hypothesisId: "H-folders-restart",
-        runId: "post-fix-2",
-      }),
-    }).catch(() => {});
-    // #endregion
-
     set({ folderTrees });
   },
   refreshMedia: async () => {
@@ -480,22 +411,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const filter = buildFilter(get());
 
     set({ refreshingMedia: true });
-
-    // #region agent log
-    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-      body: JSON.stringify({
-        sessionId: "c5832c",
-        location: "libraryStore.ts:refreshMedia",
-        message: "list_media request",
-        data: { filter, page: 1, pageSize: PAGE_SIZE, generation },
-        timestamp: Date.now(),
-        hypothesisId: "H3-crash,H4-tags",
-        runId: "post-fix",
-      }),
-    }).catch(() => {});
-    // #endregion
 
     try {
       const page = await listMedia(filter, 1, PAGE_SIZE);
@@ -525,27 +440,6 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         mediaHasMore,
         refreshingMedia: false,
       });
-
-      // #region agent log
-      fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
-        body: JSON.stringify({
-          sessionId: "c5832c",
-          location: "libraryStore.ts:refreshMedia:done",
-          message: "list_media response",
-          data: {
-            generation,
-            itemCount: items.length,
-            total: page.total,
-            mediaHasMore,
-          },
-          timestamp: Date.now(),
-          hypothesisId: "H3-load-more",
-          runId: "post-fix",
-        }),
-      }).catch(() => {});
-      // #endregion
 
       void generateMissingThumbnails(items, (updates) => {
         set((current) => ({
@@ -607,6 +501,38 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       if (get().mediaRefreshGeneration === generation) {
         set({ loadingMore: false });
       }
+    }
+  },
+  loadRejects: async () => {
+    set({ loadingRejects: true });
+    try {
+      const { activeSourceId } = get();
+      const filter =
+        activeSourceId === "all" ? undefined : { sourceId: activeSourceId };
+      const rows = await listRejects(filter);
+      const names = sourceNameMap(get().rawSources);
+      set({
+        rejectItems: rows.map((item) => mediaItemToCatalog(item, names)),
+      });
+    } finally {
+      set({ loadingRejects: false });
+    }
+  },
+  moveAllRejectsToHolding: async (label) => {
+    const ids = get().rejectItems.map((item) => item.id);
+    if (ids.length === 0) {
+      return null;
+    }
+
+    set({ movingToHolding: true });
+    try {
+      const batchId = await moveToHolding(ids, label ?? "");
+      await get().loadRejects();
+      await get().refreshMedia();
+      await get().loadCatalog();
+      return batchId;
+    } finally {
+      set({ movingToHolding: false });
     }
   },
   addSourceFromDialog: async () => {

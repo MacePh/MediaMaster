@@ -237,68 +237,47 @@ See [media-master-v2-mockup.html](./media-master-v2-mockup.html) for the interac
 
 ---
 
+---
+
 ## Delivery phases
 
-### Phase 0 — Scaffold + shell (Slice 0)
+### Phase 0 — Scaffold + shell (Slice 0) ✓
 
-- Tauri v2 + React + TypeScript + Vite
-- Port mockup CSS and shell components
-- Zustand mode state
-- Mock data in Browse/Purge/Tagging
+- Tauri v2 + React + TypeScript + Vite; mockup shell; mode switching
 
-**Accept:** App launches; all five modes switch; mock grid and purge keyboard demo work.
+### Phase 1 — SQLite foundation (Slice 1) ✓
 
-### Phase 1 — SQLite foundation (Slice 1)
+- rusqlite, migrations, models, command registration
 
-- rusqlite, initial migration, models, stub Tauri commands
-- DB at `{app_data_dir}/media_master.db`
+### Phase 2 — Scan + catalog (Slice 2) ✓
 
-**Accept:** App restart creates/uses SQLite; commands registered.
+- Folder dialog, recursive scanner, upsert media_items
 
-### Phase 2 — Scan + catalog (Slice 2)
+### Phase 3 — Browse + thumbnails (Slice 3) ✓
 
-- Folder dialog, recursive scanner, progress events
-- Upsert media_items; skip unchanged on rescan
+- Thumbnailer, paginated list_media, inspector, filters, folder tree, context menu
 
-**Accept:** Choose folder → files in DB → persist across restart.
+### Phase 4 — Purge (Slice 4) partial ✓
 
-### Phase 3 — Browse + thumbnails (Slice 3)
+- Keyboard UI; `update_media_state` persists decisions; session API stubbed
 
-- Thumbnailer (image crate + FFmpeg frame extract)
-- Paginated `list_media`, inspector, filters
+### Phase 5 — Tagging (Slice 5) partial ✓
 
-**Accept:** Real thumbnail grid; multi-select; metadata panel.
+- create_tag, assign_tags, tag filter; rename/remove stubbed
 
-### Phase 4 — Purge (Slice 4)
+### Phase 6 — Safe Delete (Slice 6) **← current**
 
-- Session commands, keyboard UI, persist purge_state
+- Holding move per source root; preview + confirm; final delete disabled
 
-**Accept:** Arrow keys persist; undo works; rejects queryable after restart.
-
-### Phase 5 — Tagging (Slice 5)
-
-- Tag CRUD, assign/remove, untagged filter
-
-**Accept:** Create tag → assign → filter → persists.
-
-### Phase 6 — Safe Delete (Slice 6)
-
-- Holding move/restore service per source root
-- Preview + confirm; final delete disabled
-
-**Accept:** Rejects move to holding; restore works; nothing permanently deleted.
+**Status:** `list_rejects`, `move_to_holding`, `list_holding_batches` implemented. Restore stubbed.
 
 ### Phase 7 — Audit (Slice 7)
 
 - Query-based findings, navigable cards
 
-**Accept:** Cards reflect real counts; actions open correct mode.
-
 ### Phase 8 — Jobs + FFmpeg (Slice 8)
 
-- Job runner, tray UI, FFmpeg/FFprobe detection
-
-**Accept:** Holding move as job; FFprobe updates codec fields.
+- Job runner, tray UI; FFprobe batch metadata
 
 ### Phase 9 — Polish (Slice 9)
 
@@ -308,16 +287,32 @@ See [media-master-v2-mockup.html](./media-master-v2-mockup.html) for the interac
 
 ## v1 acceptance checklist
 
-- [ ] Launch desktop app on Windows
-- [ ] Add source folder via dialog
-- [ ] Scan persists media to SQLite
-- [ ] Thumbnail grid + inspector with real files
-- [ ] Select images → enter Purge Mode
-- [ ] Left/right keyboard marks keep/reject
-- [ ] Finish → review rejected list
+- [x] Launch desktop app on Windows
+- [x] Add source folder via dialog
+- [x] Scan persists media to SQLite
+- [x] Thumbnail grid + inspector with real files
+- [x] Select images → enter Purge Mode
+- [x] Left/right keyboard marks keep/reject (persisted via `update_media_state`)
+- [x] Finish → review rejected list (Safe Delete loads from DB)
 - [ ] Move rejects to per-source holding folder (confirmed)
-- [ ] Create tag + assign selected thumbnails
-- [ ] App never permanently deletes files
+- [x] Create tag + assign selected thumbnails
+- [x] App never permanently deletes files
+
+---
+
+## Current implementation status (2026-06)
+
+Phases **0–3** and **3b** are shipped. **Phase 4–5** core paths work. **Phase 6** in progress.
+
+| Area | Feature |
+|------|---------|
+| Browse | Folder tree, tag/folder filters, pagination, prefetch, context menu, viewer |
+| Sources | Add/remove (catalog only), trees reload on startup |
+| Purge | Hero preview, persisted purge_state, undo |
+| Tagging | Create + assign + sidebar filter |
+| Safe Delete | DB-backed reject list; holding move (Slice 6) |
+
+See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md) for commits.
 
 ---
 

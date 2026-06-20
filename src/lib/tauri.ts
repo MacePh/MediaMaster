@@ -6,6 +6,8 @@ import type {
   MediaItem,
   MediaPage,
   MediaPatch,
+  HoldingBatch,
+  HoldingPreview,
   Source,
   SourceFolderNode,
   Tag,
@@ -84,8 +86,12 @@ export async function setSetting(key: string, value: string): Promise<void> {
   return invoke("set_setting", { key, value });
 }
 
-export async function listRejects(filter?: MediaFilter): Promise<unknown[]> {
-  return invoke<unknown[]>("list_rejects", { filter });
+export async function listRejects(filter?: MediaFilter): Promise<MediaItem[]> {
+  return invoke<MediaItem[]>("list_rejects", { filter });
+}
+
+export async function previewHoldingMove(itemIds: string[]): Promise<HoldingPreview> {
+  return invoke<HoldingPreview>("preview_holding_move", { itemIds });
 }
 
 export async function listJobs(): Promise<unknown[]> {
@@ -96,8 +102,8 @@ export async function runMediaAudit(filter?: MediaFilter): Promise<unknown[]> {
   return invoke<unknown[]>("run_media_audit", { filter });
 }
 
-export async function listHoldingBatches(): Promise<unknown[]> {
-  return invoke<unknown[]>("list_holding_batches");
+export async function listHoldingBatches(): Promise<HoldingBatch[]> {
+  return invoke<HoldingBatch[]>("list_holding_batches");
 }
 
 export async function moveToHolding(

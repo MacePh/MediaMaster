@@ -21,7 +21,7 @@ fn parse_purge_state(value: &str) -> PurgeState {
     }
 }
 
-fn row_to_media_item(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItem> {
+pub(crate) fn row_to_media_item(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItem> {
     let kind: String = row.get(3)?;
     let purge_state: String = row.get(16)?;
 
@@ -57,7 +57,7 @@ fn row_to_media_item(row: &rusqlite::Row<'_>) -> rusqlite::Result<MediaItem> {
     })
 }
 
-fn attach_tags(conn: &rusqlite::Connection, items: &mut [MediaItem]) -> Result<(), String> {
+pub(crate) fn attach_tags(conn: &rusqlite::Connection, items: &mut [MediaItem]) -> Result<(), String> {
     if items.is_empty() {
         return Ok(());
     }
