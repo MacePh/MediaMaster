@@ -2,7 +2,27 @@
 
 Running record of implementation slices and features. Complements the [spec](./MEDIA_MASTER_V2_SPEC.md) and [architecture](./MEDIA_MASTER_V2_ARCHITECTURE.md).
 
-**Current focus:** Slice 8 — Jobs + FFmpeg
+**Current focus:** Slice 9 — Polish
+
+---
+
+## Slice 8 — Jobs + FFmpeg ✓
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `services/job_runner.rs` | Done | Single-worker queue, SQLite persistence |
+| `services/ffprobe.rs` | Done | Batch metadata via FFprobe JSON |
+| Holding move as job | Done | Progress events + cancel |
+| Holding restore as job | Done | Same queue |
+| `enqueue_ffprobe_scan` | Done | From Audit probe finding |
+| Jobs tray (real backend) | Done | Progress, cancel, clear finished |
+| `job:progress` / `job:done` events | Done | App + jobsStore listeners |
+
+---
+
+## Slice 9 — Polish (next)
+
+- Empty/loading/error states, toasts, keyboard hints, app icon
 
 ---
 
@@ -18,13 +38,6 @@ Running record of implementation slices and features. Complements the [spec](./M
 | Duplicate candidates | Done | Same name + size groups |
 | Not H.265 / probe pending | Done | Codec metadata queries |
 | Audit cards → modes | Done | `itemIds` filter + navigation |
-
----
-
-## Slice 8 — Jobs + FFmpeg (next)
-
-- Job runner, tray UI; FFprobe batch metadata
-- Holding move as persisted background job
 
 ---
 

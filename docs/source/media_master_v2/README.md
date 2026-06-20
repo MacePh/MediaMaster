@@ -25,6 +25,6 @@ Core workflows (implementation status):
 
 Stack: Tauri v2 · React + TypeScript · Rust · SQLite · FFmpeg/FFprobe (optional).
 
-**Current phase:** Slice 8 — Jobs + FFmpeg. See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
+**Current phase:** Slice 9 — Polish. See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
 
 Open the HTML mockup in a browser to explore the UI shell before running the app.

@@ -152,7 +152,7 @@ All frontend calls go through typed wrappers in `src/lib/tauri.ts` using `@tauri
 | Safe Delete | `restore_holding_batch`, `final_delete_holding_batch` | ✓ restore / disabled delete |
 | Shell | `copy_image_to_clipboard` | ✓ |
 | Audit | `run_media_audit`, `list_audit_findings` | ✓ |
-| Jobs | `list_jobs` | Stub |
+| Jobs | `list_jobs`, `cancel_job`, `clear_finished_jobs`, `enqueue_ffprobe_scan` | ✓ |
 | FFmpeg | `detect_ffmpeg` | ✓ |
 | Settings | `get_settings`, `set_setting` | ✓ |
 | DB | `get_db_status` | ✓ |
@@ -292,7 +292,8 @@ App
 | 5 | Partial — create/assign tags |
 | 6 | ✓ Safe Delete — holding move + restore |
 | 7 | ✓ Audit dashboard |
-| 8–9 | Not started |
+| 8 | ✓ Jobs tray + FFprobe batch scan |
+| 9 | Not started |
 
 See [DEVELOPMENT_LOG.md](./DEVELOPMENT_LOG.md).
 

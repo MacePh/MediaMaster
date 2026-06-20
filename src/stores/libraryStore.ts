@@ -33,6 +33,7 @@ import type {
   HoldingBatch,
 } from "../lib/types";
 import { useAppStore } from "./appStore";
+import { useJobsStore } from "./jobsStore";
 
 const PAGE_SIZE = 100;
 const THUMB_BATCH_SIZE = 24;
@@ -134,6 +135,7 @@ interface LibraryState {
   moveAllRejectsToHolding: (label?: string) => Promise<string | null>;
   rescueSelectedRejectsToMaybe: () => Promise<number>;
   restoreHoldingBatchById: (batchId: string) => Promise<void>;
+  finishHoldingJob: () => Promise<void>;
   addSourceFromDialog: () => Promise<void>;
   removeSourceById: (sourceId: string) => Promise<void>;
   createTagByName: (name: string) => Promise<MockTag>;
@@ -560,12 +562,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
     set({ movingToHolding: true });
     try {
-      const batchId = await moveToHolding(ids, label ?? "");
-      await get().loadRejects();
-      await get().loadCatalog();
-      return batchId;
-    } finally {
+      const jobId = await moveToHolding(ids, label ?? "");
+      void useJobsStore.getState().loadJobs();
+      return jobId;
+    } catch (error) {
       set({ movingToHolding: false });
+      throw error;
     }
   },
   loadHoldingBatches: async () => {
@@ -655,9 +657,19 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     return selected.length;
   },
   restoreHoldingBatchById: async (batchId) => {
-    await restoreHoldingBatch(batchId);
-    await get().loadHoldingBatches();
+    set({ movingToHolding: true });
+    try {
+      await restoreHoldingBatch(batchId);
+      void useJobsStore.getState().loadJobs();
+    } catch (error) {
+      set({ movingToHolding: false });
+      throw error;
+    }
+  },
+  finishHoldingJob: async () => {
+    set({ movingToHolding: false });
     await get().loadRejects();
+    await get().loadHoldingBatches();
     await get().refreshMedia();
   },
   addSourceFromDialog: async () => {

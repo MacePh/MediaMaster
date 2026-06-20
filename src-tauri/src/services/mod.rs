@@ -1,6 +1,8 @@
 pub mod audit;
 pub mod ffmpeg;
+pub mod ffprobe;
 pub mod folder_tree;
 pub mod holding;
+pub mod job_runner;
 pub mod scanner;
 pub mod thumbnailer;

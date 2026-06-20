@@ -78,6 +78,16 @@ pub fn move_to_holding(
     item_ids: &[String],
     label: &str,
 ) -> Result<HoldingBatch, String> {
+    move_to_holding_with_progress(conn, item_ids, label, |_| {}, &|| false)
+}
+
+pub fn move_to_holding_with_progress(
+    conn: &Connection,
+    item_ids: &[String],
+    label: &str,
+    mut on_progress: impl FnMut(f64),
+    is_cancelled: &dyn Fn() -> bool,
+) -> Result<HoldingBatch, String> {
     let preview = preview_move(conn, item_ids)?;
     if preview.item_ids.is_empty() {
         return Err("No eligible rejects to move".into());
@@ -121,11 +131,17 @@ pub fn move_to_holding(
     let mut original_to_holding = HashMap::new();
     let mut moved_ids = Vec::new();
 
+    let total = rows.len().max(1);
+
     let tx = conn
         .unchecked_transaction()
         .map_err(|error| error.to_string())?;
 
-    for (media_id, original_path, _source_id, source_root) in rows {
+    for (index, (media_id, original_path, _source_id, source_root)) in rows.into_iter().enumerate() {
+        if is_cancelled() {
+            return Err("Job cancelled".into());
+        }
+
         let root = source_root.trim_end_matches(['\\', '/']);
         let holding_root = PathBuf::from(format!("{root}\\_MediaMaster_Holding\\{batch_label}"));
         fs::create_dir_all(&holding_root).map_err(|error| error.to_string())?;
@@ -161,6 +177,7 @@ pub fn move_to_holding(
 
         original_to_holding.insert(original_path, holding_path);
         moved_ids.push(media_id);
+        on_progress(((index + 1) as f64 / total as f64) * 100.0);
     }
 
     let primary_holding_path = holding_paths
@@ -184,9 +201,9 @@ pub fn move_to_holding(
     tx.commit().map_err(|error| error.to_string())?;
 
     Ok(HoldingBatch {
-        id: batch_id,
-        label: batch_label,
-        holding_path: primary_holding_path,
+        id: batch_id.clone(),
+        label: batch_label.clone(),
+        holding_path: primary_holding_path.clone(),
         item_ids: moved_ids,
         original_to_holding,
         created_at,
@@ -195,6 +212,15 @@ pub fn move_to_holding(
 }
 
 pub fn restore_batch(conn: &Connection, batch_id: &str) -> Result<HoldingBatch, String> {
+    restore_batch_with_progress(conn, batch_id, |_| {}, &|| false)
+}
+
+pub fn restore_batch_with_progress(
+    conn: &Connection,
+    batch_id: &str,
+    mut on_progress: impl FnMut(f64),
+    is_cancelled: &dyn Fn() -> bool,
+) -> Result<HoldingBatch, String> {
     let (label, holding_path, status, created_at): (String, String, String, i64) = conn
         .query_row(
             "SELECT label, holding_path, status, created_at FROM safe_delete_batches WHERE id = ?1",
@@ -229,6 +255,8 @@ pub fn restore_batch(conn: &Connection, batch_id: &str) -> Result<HoldingBatch, 
         return Err("Holding batch has no items".into());
     }
 
+    let total = rows.len().max(1);
+
     let tx = conn
         .unchecked_transaction()
         .map_err(|error| error.to_string())?;
@@ -236,7 +264,11 @@ pub fn restore_batch(conn: &Connection, batch_id: &str) -> Result<HoldingBatch, 
     let mut item_ids = Vec::new();
     let mut original_to_holding = HashMap::new();
 
-    for (media_id, original_path, holding_path) in rows {
+    for (index, (media_id, original_path, holding_path)) in rows.into_iter().enumerate() {
+        if is_cancelled() {
+            return Err("Job cancelled".into());
+        }
+
         if !Path::new(&holding_path).exists() {
             return Err(format!("Missing holding file: {holding_path}"));
         }
@@ -264,6 +296,7 @@ pub fn restore_batch(conn: &Connection, batch_id: &str) -> Result<HoldingBatch, 
 
         original_to_holding.insert(original_path, holding_path);
         item_ids.push(media_id);
+        on_progress(((index + 1) as f64 / total as f64) * 100.0);
     }
 
     tx.execute(

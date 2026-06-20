@@ -4,11 +4,11 @@ import { useJobsStore } from "../../stores/jobsStore";
 export function FfmpegStatusIcon() {
   const ffmpegReady = useAppStore((state) => state.ffmpegReady);
   const ffmpegTooltip = useAppStore((state) => state.ffmpegTooltip);
-  const jobsActive = useJobsStore((state) => state.jobs.some((job) => !job.done));
+  const jobsActive = useJobsStore((state) => state.hasActiveFfmpegJobs());
 
   const status = !ffmpegReady ? "off" : jobsActive ? "working" : "ready";
   const title = jobsActive
-    ? "FFmpeg working"
+    ? "FFprobe scan running"
     : (ffmpegTooltip ?? (ffmpegReady ? "FFmpeg ready" : "FFmpeg not detected"));
 
   return (

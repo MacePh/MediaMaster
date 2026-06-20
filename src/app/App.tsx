@@ -12,8 +12,9 @@ import { PurgeMode } from "../features/purge/PurgeMode";
 import { SafeDeleteMode } from "../features/safe-delete/SafeDeleteMode";
 import { TaggingMode } from "../features/tagging/TaggingMode";
 import { useAppStore } from "../stores/appStore";
+import { useJobsStore } from "../stores/jobsStore";
 import { useLibraryStore } from "../stores/libraryStore";
-import type { ScanProgress } from "../lib/types";
+import type { JobDoneEvent, JobProgressEvent, ScanProgress } from "../lib/types";
 
 export function App() {
   const mode = useAppStore((state) => state.mode);
@@ -23,10 +24,16 @@ export function App() {
   const loadCatalog = useLibraryStore((state) => state.loadCatalog);
   const setScanProgress = useLibraryStore((state) => state.setScanProgress);
   const refreshMedia = useLibraryStore((state) => state.refreshMedia);
+  const finishHoldingJob = useLibraryStore((state) => state.finishHoldingJob);
+  const loadAuditFindings = useLibraryStore((state) => state.loadAuditFindings);
+  const loadJobs = useJobsStore((state) => state.loadJobs);
+  const applyJobProgress = useJobsStore((state) => state.applyProgress);
+  const applyJobDone = useJobsStore((state) => state.applyDone);
 
   useEffect(() => {
     void loadCatalog();
-  }, [loadCatalog]);
+    void loadJobs();
+  }, [loadCatalog, loadJobs]);
 
   useEffect(() => {
     const unlisten = listen<ScanProgress>("scan:progress", (event) => {
@@ -48,6 +55,48 @@ export function App() {
       void unlisten.then((stop) => stop());
     };
   }, [refreshMedia, setScanProgress, showToast]);
+
+  useEffect(() => {
+    const unlistenProgress = listen<JobProgressEvent>("job:progress", (event) => {
+      applyJobProgress(event.payload);
+    });
+
+    const unlistenDone = listen<JobDoneEvent>("job:done", (event) => {
+      applyJobDone(event.payload);
+
+      if (event.payload.status === "failed" && event.payload.error) {
+        showToast(event.payload.error);
+      }
+
+      if (event.payload.batchId) {
+        void finishHoldingJob();
+        if (event.payload.status === "done") {
+          showToast("Holding operation complete");
+        }
+      } else if (useLibraryStore.getState().movingToHolding) {
+        void finishHoldingJob();
+      } else if (event.payload.status === "done") {
+        void refreshMedia();
+        void loadAuditFindings();
+        showToast("Metadata scan complete");
+      }
+
+      void loadJobs();
+    });
+
+    return () => {
+      void unlistenProgress.then((stop) => stop());
+      void unlistenDone.then((stop) => stop());
+    };
+  }, [
+    applyJobDone,
+    applyJobProgress,
+    finishHoldingJob,
+    loadAuditFindings,
+    loadJobs,
+    refreshMedia,
+    showToast,
+  ]);
 
   useEffect(() => {
     void (async () => {

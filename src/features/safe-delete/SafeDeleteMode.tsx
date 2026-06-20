@@ -37,10 +37,9 @@ export function SafeDeleteMode() {
 
   const handleMoveToHolding = async () => {
     const count = rejects.length;
-    const batchId = await moveAllRejectsToHolding();
-    if (batchId) {
-      showToast(`Moved ${count} files to holding folder`);
-      await loadHoldingBatches();
+    const jobId = await moveAllRejectsToHolding();
+    if (jobId) {
+      showToast(`Queued holding move for ${count} files — see Operations Queue`);
     }
   };
 
@@ -67,7 +66,7 @@ export function SafeDeleteMode() {
       return;
     }
     await restoreHoldingBatchById(latestMovedBatch.id);
-    showToast(`Restored ${latestMovedBatch.itemIds.length} files from holding`);
+    showToast(`Queued restore for ${latestMovedBatch.itemIds.length} files`);
   };
 
   return (

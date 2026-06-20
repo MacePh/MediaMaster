@@ -9,6 +9,7 @@ import type {
   MediaPatch,
   HoldingBatch,
   HoldingPreview,
+  Job,
   Source,
   SourceFolderNode,
   Tag,
@@ -95,8 +96,20 @@ export async function previewHoldingMove(itemIds: string[]): Promise<HoldingPrev
   return invoke<HoldingPreview>("preview_holding_move", { itemIds });
 }
 
-export async function listJobs(): Promise<unknown[]> {
-  return invoke<unknown[]>("list_jobs");
+export async function listJobs(): Promise<Job[]> {
+  return invoke<Job[]>("list_jobs");
+}
+
+export async function cancelJob(jobId: string): Promise<void> {
+  return invoke("cancel_job", { id: jobId });
+}
+
+export async function clearFinishedJobs(): Promise<void> {
+  return invoke("clear_finished_jobs");
+}
+
+export async function enqueueFfprobeScan(itemIds: string[]): Promise<Job> {
+  return invoke<Job>("enqueue_ffprobe_scan", { itemIds });
 }
 
 export async function runMediaAudit(filter?: MediaFilter): Promise<AuditFinding[]> {

@@ -5,7 +5,8 @@ mod services;
 
 use commands::media::AppPaths;
 use db::Database;
-use std::sync::Mutex;
+use services::job_runner::JobQueue;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -27,6 +28,7 @@ pub fn run() {
 
             app.manage(Mutex::new(database));
             app.manage(AppPaths { thumb_cache_dir });
+            app.manage(Arc::new(JobQueue::new(app.handle().clone())));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -62,6 +64,7 @@ pub fn run() {
             commands::jobs::list_jobs,
             commands::jobs::cancel_job,
             commands::jobs::clear_finished_jobs,
+            commands::jobs::enqueue_ffprobe_scan,
             commands::ffmpeg::detect_ffmpeg,
             commands::settings::get_settings,
             commands::settings::set_setting,

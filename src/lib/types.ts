@@ -4,7 +4,7 @@ export type MediaKind = "image" | "video";
 
 export type PurgeState = "unreviewed" | "keep" | "reject" | "maybe";
 
-export type JobStatus = "queued" | "running" | "done" | "failed" | "cancelled";
+export type JobQueueStatus = "queued" | "running" | "done" | "failed" | "cancelled";
 
 export interface MockMediaItem {
   id: string;
@@ -46,6 +46,50 @@ export interface MockJob {
   op: string;
   pct: number;
   done: boolean;
+}
+
+export type JobKind =
+  | "holding_move"
+  | "holding_restore"
+  | "ffprobe_scan"
+  | "transcode"
+  | "resize"
+  | "proxy"
+  | "extract_frames"
+  | "extract_audio"
+  | "to_webp"
+  | "move"
+  | "copy"
+  | "holding_delete"
+  | "tag_assign"
+  | "purge_mark";
+
+export interface Job {
+  id: string;
+  kind: JobKind;
+  label: string;
+  inputs: string[];
+  destPath?: string | null;
+  params: Record<string, unknown>;
+  status: JobQueueStatus;
+  progress: number;
+  command?: string | null;
+  error?: string | null;
+  undoToken?: string | null;
+  batchId?: string | null;
+}
+
+export interface JobProgressEvent {
+  jobId: string;
+  progress: number;
+  status: JobQueueStatus;
+}
+
+export interface JobDoneEvent {
+  jobId: string;
+  status: JobQueueStatus;
+  batchId?: string | null;
+  error?: string | null;
 }
 
 export interface DbStatus {

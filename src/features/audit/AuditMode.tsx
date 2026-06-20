@@ -1,5 +1,8 @@
 import { useEffect } from "react";
+import { enqueueFfprobeScan } from "../../lib/tauri";
 import type { AuditFinding, AuditSeverity, SuggestedAction } from "../../lib/types";
+import { useAppStore } from "../../stores/appStore";
+import { useJobsStore } from "../../stores/jobsStore";
 import { useLibraryStore } from "../../stores/libraryStore";
 
 function severityTone(severity: AuditSeverity): "action" | "warn" | "default" {
@@ -38,6 +41,8 @@ function isPrimaryFinding(finding: AuditFinding): boolean {
 }
 
 export function AuditMode() {
+  const showToast = useAppStore((state) => state.showToast);
+  const loadJobs = useJobsStore((state) => state.loadJobs);
   const findings = useLibraryStore((state) => state.auditFindings);
   const loadingAudit = useLibraryStore((state) => state.loadingAudit);
   const activeSourceId = useLibraryStore((state) => state.activeSourceId);
@@ -47,6 +52,20 @@ export function AuditMode() {
   useEffect(() => {
     void loadAuditFindings();
   }, [loadAuditFindings, activeSourceId]);
+
+  const handleFfprobeScan = async (finding: AuditFinding) => {
+    if (finding.itemIds.length === 0) {
+      return;
+    }
+
+    try {
+      await enqueueFfprobeScan(finding.itemIds);
+      await loadJobs();
+      showToast(`Queued FFprobe scan for ${finding.itemIds.length} videos`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not start FFprobe scan");
+    }
+  };
 
   return (
     <section className="screen on">
@@ -89,6 +108,15 @@ export function AuditMode() {
               >
                 {actionButtonLabel(finding.suggestedAction)}
               </button>
+              {finding.kind === "probe_failed" && count > 0 ? (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => void handleFfprobeScan(finding)}
+                >
+                  Run FFprobe Scan
+                </button>
+              ) : null}
             </div>
           );
         })}

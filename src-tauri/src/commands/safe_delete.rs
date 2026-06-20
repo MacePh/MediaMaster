@@ -1,7 +1,7 @@
 use crate::db::Database;
 use crate::models::{HoldingBatch, HoldingPreview};
-use crate::services::holding;
-use std::sync::Mutex;
+use crate::services::{holding, job_runner::JobQueue};
+use std::sync::{Arc, Mutex};
 use tauri::State;
 
 #[tauri::command]
@@ -17,11 +17,12 @@ pub fn preview_holding_move(
 pub fn move_to_holding(
     item_ids: Vec<String>,
     label: String,
+    queue: State<'_, Arc<JobQueue>>,
     db: State<'_, Mutex<Database>>,
 ) -> Result<String, String> {
     let db = db.lock().map_err(|error| error.to_string())?;
-    let batch = holding::move_to_holding(db.conn(), &item_ids, &label)?;
-    Ok(batch.id)
+    let job = queue.enqueue_holding_move(db.conn(), item_ids, label)?;
+    Ok(job.id)
 }
 
 #[tauri::command]
@@ -101,11 +102,12 @@ pub fn list_holding_batches(
 #[tauri::command]
 pub fn restore_holding_batch(
     batch_id: String,
+    queue: State<'_, Arc<JobQueue>>,
     db: State<'_, Mutex<Database>>,
 ) -> Result<String, String> {
     let db = db.lock().map_err(|error| error.to_string())?;
-    let batch = holding::restore_batch(db.conn(), &batch_id)?;
-    Ok(batch.id)
+    let job = queue.enqueue_holding_restore(db.conn(), batch_id)?;
+    Ok(job.id)
 }
 
 #[tauri::command]

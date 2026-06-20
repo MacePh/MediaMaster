@@ -1,8 +1,25 @@
-import { useJobsStore } from "../../stores/jobsStore";
+import { useJobsStore, jobKindLabel } from "../../stores/jobsStore";
+
+function statusLabel(status: string): string {
+  if (status === "done") {
+    return "done";
+  }
+  if (status === "failed") {
+    return "failed";
+  }
+  if (status === "cancelled") {
+    return "cancelled";
+  }
+  if (status === "queued") {
+    return "queued";
+  }
+  return "running";
+}
 
 export function JobTray() {
   const jobs = useJobsStore((state) => state.jobs);
   const clearFinished = useJobsStore((state) => state.clearFinished);
+  const cancelJobById = useJobsStore((state) => state.cancelJobById);
   const hasActiveJobs = useJobsStore((state) => state.hasActiveJobs);
 
   return (
@@ -13,7 +30,7 @@ export function JobTray() {
           {hasActiveJobs() ? "● Jobs active" : "● Idle"}
         </span>
         <div className="spacer" />
-        <button className="btn" type="button" onClick={clearFinished}>
+        <button className="btn" type="button" onClick={() => void clearFinished()}>
           Clear finished
         </button>
       </div>
@@ -21,21 +38,39 @@ export function JobTray() {
       <div className="tray-body">
         {jobs.length === 0 ? (
           <div className="empty">
-            No active operations. Purge decisions, holding moves, tag assignments,
-            and FFmpeg recipes appear here.
+            No active operations. Holding moves, restores, and FFprobe scans
+            appear here.
           </div>
         ) : (
-          jobs.map((job) => (
-            <div className="job" key={job.id}>
-              <span>{job.done ? "✓" : "▶"}</span>
-              <span className="job-name">{job.name}</span>
-              <span className="prog">
-                <i style={{ width: `${job.pct}%` }} />
-              </span>
-              <span className="job-op">{job.op}</span>
-              <span className="job-pct">{job.done ? "done" : `${job.pct}%`}</span>
-            </div>
-          ))
+          jobs.map((job) => {
+            const active = job.status === "queued" || job.status === "running";
+            const pct = Math.round(job.progress);
+
+            return (
+              <div className="job" key={job.id}>
+                <span>{job.status === "done" ? "✓" : active ? "▶" : "○"}</span>
+                <span className="job-name">{job.label}</span>
+                <span className="prog">
+                  <i style={{ width: `${pct}%` }} />
+                </span>
+                <span className="job-op">{jobKindLabel(job.kind)}</span>
+                <span className="job-pct">
+                  {job.error
+                    ? "failed"
+                    : `${statusLabel(job.status)}${active ? ` ${pct}%` : ""}`}
+                </span>
+                {active ? (
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => void cancelJobById(job.id)}
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+              </div>
+            );
+          })
         )}
       </div>
     </footer>

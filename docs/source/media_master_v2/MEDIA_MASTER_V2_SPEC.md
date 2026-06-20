@@ -273,7 +273,12 @@ See [media-master-v2-mockup.html](./media-master-v2-mockup.html) for the interac
 
 - Query-based findings, navigable cards with `itemIds` filter
 
-### Phase 8 — Jobs + FFmpeg (Slice 8) **← current**
+### Phase 8 — Jobs + FFmpeg (Slice 8) ✓
+
+- Job runner with persisted queue; holding move/restore as background jobs
+- FFprobe batch metadata scan from Audit
+
+### Phase 9 — Polish (Slice 9) **← current**
 
 - Job runner, tray UI; FFprobe batch metadata
 
