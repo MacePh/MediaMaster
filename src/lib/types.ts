@@ -21,6 +21,10 @@ export interface MockMediaItem {
   sourceName: string;
   filePath: string;
   thumbPath?: string | null;
+  codec?: string | null;
+  durationSec?: number | null;
+  bitrate?: number | null;
+  fps?: number | null;
   selected: boolean;
   hue: number;
 }

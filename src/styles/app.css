@@ -889,10 +889,22 @@ select {
   border-radius: 7px;
   padding: 10px;
   cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
 }
 
-.op-card:hover {
+.op-card.action:hover {
   border-color: var(--amber-dim);
+}
+
+.op-card.disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.op-card.disabled:hover {
+  border-color: var(--line);
 }
 
 .op-card .t {

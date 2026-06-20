@@ -48,8 +48,13 @@ pub fn probe_file(ffprobe_path: &Path, media_path: &Path) -> Result<ProbeResult,
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
+        use std::process::Stdio;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
-        command.creation_flags(CREATE_NO_WINDOW);
+        command
+            .creation_flags(CREATE_NO_WINDOW)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
     }
 
     let output = command

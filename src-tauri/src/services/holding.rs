@@ -73,14 +73,6 @@ pub fn preview_move(conn: &Connection, item_ids: &[String]) -> Result<HoldingPre
     })
 }
 
-pub fn move_to_holding(
-    conn: &Connection,
-    item_ids: &[String],
-    label: &str,
-) -> Result<HoldingBatch, String> {
-    move_to_holding_with_progress(conn, item_ids, label, |_| {}, &|| false)
-}
-
 pub fn move_to_holding_with_progress(
     conn: &Connection,
     item_ids: &[String],
@@ -209,10 +201,6 @@ pub fn move_to_holding_with_progress(
         created_at,
         status: HoldingBatchStatus::Moved,
     })
-}
-
-pub fn restore_batch(conn: &Connection, batch_id: &str) -> Result<HoldingBatch, String> {
-    restore_batch_with_progress(conn, batch_id, |_| {}, &|| false)
 }
 
 pub fn restore_batch_with_progress(

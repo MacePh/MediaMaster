@@ -2,9 +2,21 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { TagChip } from "../shared/TagChip";
 import { usePurgeSessionCounts } from "../../hooks/usePurgeSelectors";
 import { useAppStore } from "../../stores/appStore";
+import { useJobsStore } from "../../stores/jobsStore";
 import { useLibraryStore } from "../../stores/libraryStore";
+import { enqueueFfprobeScan } from "../../lib/tauri";
+import { formatBitrate, formatDuration } from "../../lib/format";
+
+const PLANNED_OPERATIONS = [
+  { title: "Compress archive", detail: "Planned" },
+  { title: "Make proxy", detail: "Planned" },
+  { title: "Images to WebP", detail: "Planned" },
+  { title: "Extract frames", detail: "Planned" },
+] as const;
 
 function BrowseInspectorContent({ itemId }: { itemId: string }) {
+  const showToast = useAppStore((state) => state.showToast);
+  const loadJobs = useJobsStore((state) => state.loadJobs);
   const item = useLibraryStore((state) =>
     state.items.find((entry) => entry.id === itemId),
   );
@@ -16,6 +28,16 @@ function BrowseInspectorContent({ itemId }: { itemId: string }) {
   const previewPath = item.filePath || item.thumbPath;
   const previewSrc = previewPath ? convertFileSrc(previewPath) : null;
   const usesGradientPreview = !previewSrc;
+
+  const handleProbeMetadata = async () => {
+    try {
+      await enqueueFfprobeScan([item.id]);
+      await loadJobs();
+      showToast("Queued FFprobe scan — see Operations Queue");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not start FFprobe scan");
+    }
+  };
 
   return (
     <div className="panel-pad">
@@ -59,26 +81,48 @@ function BrowseInspectorContent({ itemId }: { itemId: string }) {
             <td className="k">Size</td>
             <td className="v">{item.sizeLabel}</td>
           </tr>
+          {item.kind === "video" ? (
+            <>
+              <tr>
+                <td className="k">Codec</td>
+                <td className="v">{item.codec?.toUpperCase() ?? "not probed"}</td>
+              </tr>
+              <tr>
+                <td className="k">Duration</td>
+                <td className="v">{formatDuration(item.durationSec)}</td>
+              </tr>
+              <tr>
+                <td className="k">Bitrate</td>
+                <td className="v">{formatBitrate(item.bitrate)}</td>
+              </tr>
+              <tr>
+                <td className="k">FPS</td>
+                <td className="v">
+                  {item.fps != null && item.fps > 0 ? item.fps.toFixed(2) : "—"}
+                </td>
+              </tr>
+            </>
+          ) : null}
         </tbody>
       </table>
       <div className="section">Operations</div>
       <div className="op-grid">
-        <div className="op-card">
-          <div className="t">Compress archive</div>
-          <div className="d">Coming in Slice 8</div>
-        </div>
-        <div className="op-card">
-          <div className="t">Make proxy</div>
-          <div className="d">Coming in Slice 8</div>
-        </div>
-        <div className="op-card">
-          <div className="t">Images to WebP</div>
-          <div className="d">Coming in Slice 8</div>
-        </div>
-        <div className="op-card">
-          <div className="t">Extract frames</div>
-          <div className="d">Coming in Slice 8</div>
-        </div>
+        {item.kind === "video" ? (
+          <button
+            className="op-card action"
+            type="button"
+            onClick={() => void handleProbeMetadata()}
+          >
+            <div className="t">Probe metadata</div>
+            <div className="d">FFprobe via job queue</div>
+          </button>
+        ) : null}
+        {PLANNED_OPERATIONS.map((operation) => (
+          <div className="op-card disabled" key={operation.title}>
+            <div className="t">{operation.title}</div>
+            <div className="d">{operation.detail}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

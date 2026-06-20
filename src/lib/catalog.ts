@@ -37,6 +37,10 @@ export function mediaItemToCatalog(
     sourceName: sourceNameById.get(item.sourceId) ?? "Unknown source",
     filePath: item.path,
     thumbPath: item.thumbPath,
+    codec: item.codec ?? null,
+    durationSec: item.durationSec ?? null,
+    bitrate: item.bitrate ?? null,
+    fps: item.fps ?? null,
     selected: false,
     hue: hashHue(item.id),
   };

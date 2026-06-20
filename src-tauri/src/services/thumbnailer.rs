@@ -116,20 +116,33 @@ fn generate_video_thumbnail(
     source: &Path,
     dest: &Path,
 ) -> Result<(), String> {
-    let status = Command::new(ffmpeg)
-        .args([
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-ss",
-            "1",
-            "-i",
-        ])
-        .arg(source)
-        .args(["-frames:v", "1", "-q:v", "2", "-y"])
-        .arg(dest)
-        .status()
-        .map_err(|error| error.to_string())?;
+    let mut command = Command::new(ffmpeg);
+    command.args([
+        "-hide_banner",
+        "-loglevel",
+        "quiet",
+        "-nostdin",
+        "-ss",
+        "1",
+        "-i",
+    ]);
+    command.arg(source);
+    command.args(["-frames:v", "1", "-q:v", "2", "-y"]);
+    command.arg(dest);
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Stdio;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        command
+            .creation_flags(CREATE_NO_WINDOW)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+    }
+
+    let status = command.status().map_err(|error| error.to_string())?;
 
     if status.success() && dest.is_file() {
         Ok(())
