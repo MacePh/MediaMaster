@@ -6,4 +6,5 @@ pub mod purge;
 pub mod safe_delete;
 pub mod scan;
 pub mod settings;
+pub mod shell;
 pub mod tags;

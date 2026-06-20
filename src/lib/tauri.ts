@@ -5,6 +5,7 @@ import type {
   MediaFilter,
   MediaPage,
   Source,
+  SourceFolderNode,
   Tag,
   ThumbnailResult,
 } from "./types";
@@ -37,6 +38,10 @@ export async function listMedia(
   return invoke<MediaPage>("list_media", { filter, page, pageSize });
 }
 
+export async function listSourceFolders(sourceId: string): Promise<SourceFolderNode[]> {
+  return invoke<SourceFolderNode[]>("list_source_folders", { sourceId });
+}
+
 export async function listTags(): Promise<Tag[]> {
   return invoke<Tag[]>("list_tags");
 }
@@ -55,6 +60,10 @@ export async function assignTags(itemIds: string[], tagIds: string[]): Promise<v
 
 export async function ensureThumbnails(itemIds: string[]): Promise<ThumbnailResult[]> {
   return invoke<ThumbnailResult[]>("ensure_thumbnails", { itemIds });
+}
+
+export async function copyImageToClipboard(path: string): Promise<void> {
+  return invoke("copy_image_to_clipboard", { path });
 }
 
 export async function detectFfmpeg(): Promise<FfmpegInfo> {

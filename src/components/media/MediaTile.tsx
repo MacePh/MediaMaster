@@ -15,6 +15,7 @@ interface MediaTileProps {
   onToggle?: (id: string, shiftKey: boolean) => void;
   onOpen?: (id: string) => void;
   onCheckbox?: (id: string, shiftKey: boolean) => void;
+  onContextMenu?: (item: MockMediaItem, position: { x: number; y: number }) => void;
 }
 
 export function MediaTile({
@@ -26,6 +27,7 @@ export function MediaTile({
   onToggle,
   onOpen,
   onCheckbox,
+  onContextMenu,
 }: MediaTileProps) {
   const thumbSrc = item.thumbPath ? convertFileSrc(item.thumbPath) : null;
   const clickTimerRef = useRef<number | null>(null);
@@ -78,6 +80,10 @@ export function MediaTile({
       className={`tile ${item.selected ? "sel" : ""} ${focused ? "focused" : ""} ${selectMode ? "select-mode" : ""}`}
       onClick={selectMode ? handleTileSelectClick : handleTileClick}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onContextMenu?.(item, { x: event.clientX, y: event.clientY });
+      }}
       role="button"
       tabIndex={0}
       onKeyDown={(event) => {

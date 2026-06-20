@@ -84,6 +84,14 @@ export interface MediaFilter {
   purgeState?: PurgeState | null;
   tagId?: string | null;
   search?: string | null;
+  folderRelPath?: string | null;
+}
+
+export interface SourceFolderNode {
+  relPath: string;
+  name: string;
+  count: number;
+  children: SourceFolderNode[];
 }
 
 export interface MediaItem {

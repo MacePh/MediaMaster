@@ -25,3 +25,4 @@ hex = "0.4"
 walkdir = "2"
 tokio = { version = "1", features = ["rt"] }
 image = "0.25"
+arboard = "3"

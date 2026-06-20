@@ -1,5 +1,6 @@
 use crate::db::Database;
-use crate::models::{DbStatus, Source};
+use crate::models::{DbStatus, Source, SourceFolderNode};
+use crate::services::folder_tree;
 use crate::services::scanner::{scan_source as run_scan, source_root_exists};
 use rusqlite::{params, Connection};
 use std::path::PathBuf;
@@ -180,6 +181,15 @@ pub async fn scan_source(
     .map_err(|error| error.to_string())??;
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn list_source_folders(
+    source_id: String,
+    db: State<'_, Mutex<Database>>,
+) -> Result<Vec<SourceFolderNode>, String> {
+    let db = db.lock().map_err(|error| error.to_string())?;
+    folder_tree::list_source_folder_tree(db.conn(), &source_id)
 }
 
 #[tauri::command]

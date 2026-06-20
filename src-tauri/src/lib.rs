@@ -34,6 +34,7 @@ pub fn run() {
             commands::scan::remove_source,
             commands::scan::list_sources,
             commands::scan::scan_source,
+            commands::scan::list_source_folders,
             commands::scan::get_db_status,
             commands::media::list_media,
             commands::media::get_media_item,
@@ -64,6 +65,7 @@ pub fn run() {
             commands::ffmpeg::detect_ffmpeg,
             commands::settings::get_settings,
             commands::settings::set_setting,
+            commands::shell::copy_image_to_clipboard,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

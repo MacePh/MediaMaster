@@ -11,6 +11,7 @@ interface MediaGridProps {
   onToggle?: (id: string, shiftKey: boolean) => void;
   onOpen?: (id: string) => void;
   onCheckbox?: (id: string, shiftKey: boolean) => void;
+  onContextMenu?: (item: MockMediaItem, position: { x: number; y: number }) => void;
 }
 
 export function MediaGrid({
@@ -23,6 +24,7 @@ export function MediaGrid({
   onToggle,
   onOpen,
   onCheckbox,
+  onContextMenu,
 }: MediaGridProps) {
   if (items.length === 0) {
     return <div className="empty">No media items match the current filter.</div>;
@@ -41,6 +43,7 @@ export function MediaGrid({
           onToggle={onToggle}
           onOpen={onOpen}
           onCheckbox={onCheckbox}
+          onContextMenu={onContextMenu}
         />
       ))}
     </div>

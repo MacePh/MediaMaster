@@ -269,6 +269,36 @@ select {
   color: var(--txt-faint);
 }
 
+.side-item-folder {
+  font-size: 12px;
+}
+
+.side-folder-toggle {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--txt-faint);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.side-folder-toggle:hover {
+  color: var(--txt);
+}
+
+.side-folder-spacer {
+  flex: none;
+  width: 18px;
+}
+
+.side-folder-dot {
+  opacity: 0.55;
+}
+
 .main {
   grid-area: main;
   background: var(--bg);
@@ -408,6 +438,49 @@ select {
   flex: 1;
   overflow: auto;
   padding: 16px;
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+}
+
+.grid-stack {
+  position: relative;
+}
+
+.grid-stack.refreshing .grid {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.ctx-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px #0008;
+}
+
+.ctx-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ctx-item:hover {
+  background: var(--raised);
 }
 
 .empty-state {
@@ -890,6 +963,14 @@ select {
   overflow: hidden;
   display: grid;
   place-items: center;
+  min-height: 320px;
+}
+
+.hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  max-height: min(70vh, 720px);
 }
 
 .hero .mark {
@@ -935,6 +1016,22 @@ select {
   right: 18px;
   color: var(--green);
   transform: rotate(8deg);
+}
+
+.decision.maybe {
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--amber);
+}
+
+.decision.on {
+  opacity: 1;
+  background: #000a;
+}
+
+.decision:not(.on) {
+  display: none;
 }
 
 .kbdbar {

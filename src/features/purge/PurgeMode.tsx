@@ -1,3 +1,4 @@
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { gradientForHue } from "../../lib/mockData";
 import { useVisibleItems } from "../../hooks/useLibrarySelectors";
@@ -67,6 +68,35 @@ export function PurgeMode() {
     return () => window.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, index, sessionComplete]);
+
+  const previewPath = current?.filePath || current?.thumbPath;
+  const previewSrc = previewPath ? convertFileSrc(previewPath) : null;
+
+  useEffect(() => {
+    if (!current) {
+      return;
+    }
+
+    // #region agent log
+    fetch("http://127.0.0.1:7667/ingest/61655ba1-4c9d-4e22-abd4-4058870abec3", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "c5832c" },
+      body: JSON.stringify({
+        sessionId: "c5832c",
+        location: "PurgeMode.tsx:preview",
+        message: "purge hero preview",
+        data: {
+          itemId: current.id,
+          filePath: current.filePath ?? null,
+          thumbPath: current.thumbPath ?? null,
+          hasPreviewSrc: Boolean(previewSrc),
+        },
+        timestamp: Date.now(),
+        hypothesisId: "H1-purge-preview",
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [current?.id, current?.filePath, current?.thumbPath, previewSrc]);
 
   if (sessionItems.length === 0) {
     return (
@@ -147,10 +177,24 @@ export function PurgeMode() {
             </button>
           </div>
 
-          <div className="hero" style={{ background: gradientForHue(current.hue) }}>
-            <div className="decision left">REJECT</div>
-            <div className="decision right">KEEP</div>
-            <div className="mark">{current.ext}</div>
+          <div
+            className="hero"
+            style={previewSrc ? undefined : { background: gradientForHue(current.hue) }}
+          >
+            {current.state === "reject" ? (
+              <div className="decision left on">REJECT</div>
+            ) : null}
+            {current.state === "keep" ? (
+              <div className="decision right on">KEEP</div>
+            ) : null}
+            {current.state === "maybe" ? (
+              <div className="decision maybe on">MAYBE</div>
+            ) : null}
+            {previewSrc ? (
+              <img src={previewSrc} alt={current.name} className="hero-img" />
+            ) : (
+              <div className="mark">{current.ext}</div>
+            )}
             <div className="hero-info">
               <div>
                 <div className="fn">{current.name}</div>

@@ -235,6 +235,7 @@ pub struct MediaFilter {
     pub purge_state: Option<PurgeState>,
     pub tag_id: Option<String>,
     pub search: Option<String>,
+    pub folder_rel_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -272,6 +273,15 @@ pub struct ScanProgress {
     pub phase: String,
     pub current_path: Option<String>,
     pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceFolderNode {
+    pub rel_path: String,
+    pub name: String,
+    pub count: i64,
+    pub children: Vec<SourceFolderNode>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

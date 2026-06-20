@@ -104,7 +104,7 @@ pub fn list_media(
     db: State<'_, Mutex<Database>>,
 ) -> Result<MediaPage, String> {
     let page = page.unwrap_or(1).max(1);
-    let page_size = page_size.unwrap_or(200).clamp(1, 500);
+    let page_size = page_size.unwrap_or(100).clamp(1, 200);
     let offset = (page - 1) * page_size;
 
     let db = db.lock().map_err(|error| error.to_string())?;
@@ -114,9 +114,9 @@ pub fn list_media(
     let mut values: Vec<Box<dyn ToSql>> = Vec::new();
 
     if let Some(filter) = filter {
-        if let Some(source_id) = filter.source_id {
+        if let Some(ref source_id) = filter.source_id {
             where_clauses.push("source_id = ?".into());
-            values.push(Box::new(source_id));
+            values.push(Box::new(source_id.clone()));
         }
         if let Some(kind) = filter.kind {
             let kind_value = match kind {
@@ -148,6 +148,26 @@ pub fn list_media(
                 "id IN (SELECT media_id FROM media_tags WHERE tag_id = ?)".into(),
             );
             values.push(Box::new(tag_id));
+        }
+        if let Some(folder_rel_path) = filter.folder_rel_path {
+            let trimmed = folder_rel_path.trim();
+            if !trimmed.is_empty() {
+                let source_id = filter
+                    .source_id
+                    .clone()
+                    .ok_or_else(|| "folderRelPath requires sourceId".to_string())?;
+                let source_root: String = conn
+                    .query_row(
+                        "SELECT path FROM sources WHERE id = ?1",
+                        params![source_id],
+                        |row| row.get(0),
+                    )
+                    .map_err(|error| error.to_string())?;
+                let root = source_root.trim_end_matches(['\\', '/']);
+                let rel = trimmed.replace('/', "\\");
+                where_clauses.push("LOWER(path) LIKE LOWER(?)".into());
+                values.push(Box::new(format!("{root}\\{rel}\\%")));
+            }
         }
     }
 
@@ -205,6 +225,7 @@ pub fn ensure_thumbnails(
     db: State<'_, Mutex<Database>>,
     paths: State<'_, AppPaths>,
 ) -> Result<Vec<ThumbnailResult>, String> {
+    let item_ids: Vec<String> = item_ids.into_iter().take(24).collect();
     let db = db.lock().map_err(|error| error.to_string())?;
     let conn = db.conn();
 
