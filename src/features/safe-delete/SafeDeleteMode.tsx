@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+import { openPath } from "@tauri-apps/plugin-opener";
 import { MediaGrid } from "../../components/media/MediaGrid";
-import { useRejectedItems } from "../../hooks/useLibrarySelectors";
+import { useRejectedItems, useSelectedCount } from "../../hooks/useLibrarySelectors";
 import { useAppStore } from "../../stores/appStore";
 import { useLibraryStore } from "../../stores/libraryStore";
 
@@ -8,16 +9,24 @@ export function SafeDeleteMode() {
   const setMode = useAppStore((state) => state.setMode);
   const showToast = useAppStore((state) => state.showToast);
   const rejects = useRejectedItems();
+  const selectedCount = useSelectedCount();
+  const holdingBatches = useLibraryStore((state) => state.holdingBatches);
   const loadingRejects = useLibraryStore((state) => state.loadingRejects);
   const movingToHolding = useLibraryStore((state) => state.movingToHolding);
   const loadRejects = useLibraryStore((state) => state.loadRejects);
+  const loadHoldingBatches = useLibraryStore((state) => state.loadHoldingBatches);
   const moveAllRejectsToHolding = useLibraryStore((state) => state.moveAllRejectsToHolding);
+  const rescueSelectedRejectsToMaybe = useLibraryStore((state) => state.rescueSelectedRejectsToMaybe);
+  const restoreHoldingBatchById = useLibraryStore((state) => state.restoreHoldingBatchById);
   const toggleSelection = useLibraryStore((state) => state.toggleSelection);
   const totalBytes = rejects.reduce((sum, item) => sum + item.sizeBytes, 0);
 
+  const latestMovedBatch = holdingBatches.find((batch) => batch.status === "moved");
+
   useEffect(() => {
     void loadRejects();
-  }, [loadRejects]);
+    void loadHoldingBatches();
+  }, [loadRejects, loadHoldingBatches]);
 
   const formatBytes = (bytes: number) => {
     if (bytes < 1024 * 1024 * 1024) {
@@ -27,10 +36,38 @@ export function SafeDeleteMode() {
   };
 
   const handleMoveToHolding = async () => {
+    const count = rejects.length;
     const batchId = await moveAllRejectsToHolding();
     if (batchId) {
-      showToast(`Moved ${rejects.length} files to holding folder`);
+      showToast(`Moved ${count} files to holding folder`);
+      await loadHoldingBatches();
     }
+  };
+
+  const handleRescue = async () => {
+    const count = await rescueSelectedRejectsToMaybe();
+    if (count > 0) {
+      showToast(`Marked ${count} selected as maybe`);
+    }
+  };
+
+  const handleRevealHolding = async () => {
+    if (!latestMovedBatch) {
+      return;
+    }
+    try {
+      await openPath(latestMovedBatch.holdingPath);
+    } catch {
+      showToast("Could not open holding folder");
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!latestMovedBatch) {
+      return;
+    }
+    await restoreHoldingBatchById(latestMovedBatch.id);
+    showToast(`Restored ${latestMovedBatch.itemIds.length} files from holding`);
   };
 
   return (
@@ -72,11 +109,16 @@ export function SafeDeleteMode() {
               1. Preview affected files
             </div>
             <p className="muted" style={{ marginTop: 6, lineHeight: 1.5 }}>
-              All catalog rejects not yet in holding are listed here — not limited to the
-              current browse page.
+              Select items to rescue from the reject batch before moving to holding.
             </p>
-            <button className="btn" style={{ marginTop: 10 }} type="button" disabled>
-              Mark selected as Maybe
+            <button
+              className="btn"
+              style={{ marginTop: 10 }}
+              type="button"
+              disabled={selectedCount === 0}
+              onClick={() => void handleRescue()}
+            >
+              Mark selected as Maybe ({selectedCount})
             </button>
           </div>
 
@@ -85,8 +127,8 @@ export function SafeDeleteMode() {
               2. Move to holding folder
             </div>
             <p className="muted" style={{ marginTop: 6, lineHeight: 1.5 }}>
-              Files move into a dated _MediaMaster_Holding folder under each source root,
-              preserving relative paths.
+              Files move into _MediaMaster_Holding under each source root, preserving
+              relative paths.
             </p>
             <button
               className="btn primary"
@@ -103,15 +145,31 @@ export function SafeDeleteMode() {
 
           <div className="step">
             <div className="title" style={{ fontSize: 13 }}>
-              3. Final delete later
+              3. Review holding folder
             </div>
             <p className="muted" style={{ marginTop: 6, lineHeight: 1.5 }}>
-              Browse the holding folder in Explorer first. Restore is planned for a
-              follow-up; permanent delete remains disabled in v1.
+              {latestMovedBatch
+                ? `${latestMovedBatch.label} · ${latestMovedBatch.itemIds.length} files`
+                : "No active holding batch yet."}
             </p>
-            <button className="btn" style={{ marginTop: 10 }} type="button" disabled>
-              Reveal Holding Folder
+            <button
+              className="btn"
+              style={{ marginTop: 10 }}
+              type="button"
+              disabled={!latestMovedBatch}
+              onClick={() => void handleRevealHolding()}
+            >
+              Open Holding Folder
             </button>{" "}
+            <button
+              className="btn"
+              style={{ marginTop: 10 }}
+              type="button"
+              disabled={!latestMovedBatch}
+              onClick={() => void handleRestore()}
+            >
+              Restore Batch
+            </button>
             <button className="btn danger" style={{ marginTop: 10 }} type="button" disabled>
               Delete Holding Folder
             </button>

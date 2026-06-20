@@ -100,10 +100,12 @@ pub fn list_holding_batches(
 
 #[tauri::command]
 pub fn restore_holding_batch(
-    _batch_id: String,
-    _db: State<'_, Mutex<Database>>,
+    batch_id: String,
+    db: State<'_, Mutex<Database>>,
 ) -> Result<String, String> {
-    Err("Holding restore is not implemented yet (Slice 6)".into())
+    let db = db.lock().map_err(|error| error.to_string())?;
+    let batch = holding::restore_batch(db.conn(), &batch_id)?;
+    Ok(batch.id)
 }
 
 #[tauri::command]

@@ -7,7 +7,20 @@ export function useVisibleItems(): MockMediaItem[] {
 }
 
 export function useSelectedCount(): number {
-  return useLibraryStore((state) => state.items.filter((item) => item.selected).length);
+  return useLibraryStore((state) => {
+    const ids = new Set<string>();
+    for (const item of state.items) {
+      if (item.selected) {
+        ids.add(item.id);
+      }
+    }
+    for (const item of state.rejectItems) {
+      if (item.selected) {
+        ids.add(item.id);
+      }
+    }
+    return ids.size;
+  });
 }
 
 export function useRejectedItems(): MockMediaItem[] {

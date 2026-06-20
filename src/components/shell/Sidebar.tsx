@@ -23,6 +23,10 @@ export function Sidebar() {
   const addSourceFromDialog = useLibraryStore((state) => state.addSourceFromDialog);
   const removeSourceById = useLibraryStore((state) => state.removeSourceById);
   const counts = usePurgeCounts();
+  const holdingBatches = useLibraryStore((state) => state.holdingBatches);
+  const restoreHoldingBatchById = useLibraryStore((state) => state.restoreHoldingBatchById);
+
+  const activeHolding = holdingBatches.filter((batch) => batch.status === "moved");
 
   const confirmRemoveSource = async (sourceId: string, sourceName: string) => {
     const confirmed = await ask(
@@ -171,11 +175,25 @@ export function Sidebar() {
       </div>
 
       <div className="side-head">Holding</div>
-      <div className="side-item">
-        <span className="sw" style={{ background: "#555b66" }} />
-        Pending final review
-        <span className="count">0</span>
-      </div>
+      {activeHolding.length === 0 ? (
+        <div className="side-empty">No files in holding</div>
+      ) : (
+        activeHolding.slice(0, 5).map((batch) => (
+          <div key={batch.id} className="side-item side-item-holding">
+            <span className="sw" style={{ background: "#555b66" }} />
+            <span className="side-source-name">{batch.label}</span>
+            <span className="count">{batch.itemIds.length}</span>
+            <button
+              type="button"
+              className="side-restore"
+              title="Restore batch"
+              onClick={() => void restoreHoldingBatchById(batch.id)}
+            >
+              ↩
+            </button>
+          </div>
+        ))
+      )}
     </aside>
   );
 }

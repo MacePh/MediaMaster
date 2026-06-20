@@ -194,6 +194,128 @@ pub fn move_to_holding(
     })
 }
 
+pub fn restore_batch(conn: &Connection, batch_id: &str) -> Result<HoldingBatch, String> {
+    let (label, holding_path, status, created_at): (String, String, String, i64) = conn
+        .query_row(
+            "SELECT label, holding_path, status, created_at FROM safe_delete_batches WHERE id = ?1",
+            params![batch_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .map_err(|_| format!("Holding batch not found: {batch_id}"))?;
+
+    if status == "restored" {
+        return Err("This holding batch was already restored".into());
+    }
+
+    let mut item_stmt = conn
+        .prepare(
+            "SELECT media_id, original_path, holding_path FROM safe_delete_items WHERE batch_id = ?1",
+        )
+        .map_err(|error| error.to_string())?;
+
+    let rows = item_stmt
+        .query_map(params![batch_id], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+            ))
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+
+    if rows.is_empty() {
+        return Err("Holding batch has no items".into());
+    }
+
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|error| error.to_string())?;
+
+    let mut item_ids = Vec::new();
+    let mut original_to_holding = HashMap::new();
+
+    for (media_id, original_path, holding_path) in rows {
+        if !Path::new(&holding_path).exists() {
+            return Err(format!("Missing holding file: {holding_path}"));
+        }
+
+        let original = PathBuf::from(&original_path);
+        if let Some(parent) = original.parent() {
+            fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        }
+
+        let dest = unique_file_path(&original)?;
+        fs::rename(&holding_path, &dest).map_err(|error| {
+            format!("Failed to restore {holding_path} → {}: {error}", dest.display())
+        })?;
+
+        let restored_path = dest.to_string_lossy().to_string();
+
+        tx.execute(
+            "UPDATE media_items
+             SET path = ?1, original_path = NULL, holding_batch_id = NULL,
+                 thumb_path = NULL, purge_state = 'reject'
+             WHERE id = ?2",
+            params![restored_path, media_id],
+        )
+        .map_err(|error| error.to_string())?;
+
+        original_to_holding.insert(original_path, holding_path);
+        item_ids.push(media_id);
+    }
+
+    tx.execute(
+        "UPDATE safe_delete_batches SET status = 'restored' WHERE id = ?1",
+        params![batch_id],
+    )
+    .map_err(|error| error.to_string())?;
+
+    tx.commit().map_err(|error| error.to_string())?;
+
+    Ok(HoldingBatch {
+        id: batch_id.to_string(),
+        label,
+        holding_path,
+        item_ids,
+        original_to_holding,
+        created_at,
+        status: HoldingBatchStatus::Restored,
+    })
+}
+
+fn unique_file_path(target: &Path) -> Result<PathBuf, String> {
+    if !target.exists() {
+        return Ok(target.to_path_buf());
+    }
+
+    let parent = target
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(PathBuf::new);
+    let stem = target
+        .file_stem()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "file".into());
+    let ext = target
+        .extension()
+        .map(|value| format!(".{}", value.to_string_lossy()))
+        .unwrap_or_default();
+
+    for suffix in 1..1000 {
+        let candidate = parent.join(format!("{stem}_{suffix}{ext}"));
+        if !candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+
+    Err(format!(
+        "Could not find unique restore path for {}",
+        target.display()
+    ))
+}
+
 fn relative_path_from_root(source_root: &str, file_path: &str) -> Result<PathBuf, String> {
     let normalized_root = source_root.replace('/', "\\");
     let normalized_file = file_path.replace('/', "\\");

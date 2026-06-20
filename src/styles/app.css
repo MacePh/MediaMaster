@@ -732,6 +732,31 @@ select {
   background: #e5705b22;
 }
 
+.side-restore {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--txt-faint);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+}
+
+.side-item-holding:hover .side-restore,
+.side-restore:focus-visible {
+  opacity: 1;
+}
+
+.side-restore:hover {
+  color: var(--green);
+  background: #7ddc8322;
+}
+
 .check {
   position: absolute;
   inset: auto 7px 7px auto;

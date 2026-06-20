@@ -13,20 +13,26 @@ import {
   listRejects,
   listSourceFolders,
   listSources,
+  listHoldingBatches,
   listTags,
   moveToHolding,
   removeSource,
+  restoreHoldingBatch,
+  runMediaAudit,
   scanSource,
   updateMediaState,
 } from "../lib/tauri";
 import type {
+  AuditFinding,
   MediaFilter,
   MockMediaItem,
   MockSource,
   MockTag,
   ScanProgress,
   SourceFolderNode,
+  HoldingBatch,
 } from "../lib/types";
+import { useAppStore } from "./appStore";
 
 const PAGE_SIZE = 100;
 const THUMB_BATCH_SIZE = 24;
@@ -83,6 +89,9 @@ interface LibraryState {
   activeSourceId: string;
   activeFolderRelPath: string | null;
   activeTagId: string | null;
+  auditItemIds: string[] | null;
+  auditFindings: AuditFinding[];
+  loadingAudit: boolean;
   search: string;
   mediaPage: number;
   mediaTotal: number;
@@ -92,6 +101,7 @@ interface LibraryState {
   loadingMore: boolean;
   refreshingMedia: boolean;
   rejectItems: MockMediaItem[];
+  holdingBatches: HoldingBatch[];
   loadingRejects: boolean;
   movingToHolding: boolean;
   scanningSourceId: string | null;
@@ -117,7 +127,13 @@ interface LibraryState {
   refreshMedia: () => Promise<void>;
   loadMoreMedia: () => Promise<void>;
   loadRejects: () => Promise<void>;
+  loadHoldingBatches: () => Promise<void>;
+  loadAuditFindings: () => Promise<void>;
+  applyAuditFinding: (finding: AuditFinding) => Promise<void>;
+  clearAuditFilter: () => void;
   moveAllRejectsToHolding: (label?: string) => Promise<string | null>;
+  rescueSelectedRejectsToMaybe: () => Promise<number>;
+  restoreHoldingBatchById: (batchId: string) => Promise<void>;
   addSourceFromDialog: () => Promise<void>;
   removeSourceById: (sourceId: string) => Promise<void>;
   createTagByName: (name: string) => Promise<MockTag>;
@@ -134,12 +150,13 @@ interface LibraryState {
 }
 
 function buildFilter(state: LibraryState): MediaFilter | undefined {
-  const { activeSourceId, activeTagId, activeFolderRelPath, search } = state;
+  const { activeSourceId, activeTagId, activeFolderRelPath, search, auditItemIds } = state;
   const hasFilter =
     activeSourceId !== "all" ||
     Boolean(activeTagId) ||
     Boolean(activeFolderRelPath) ||
-    Boolean(search.trim());
+    Boolean(search.trim()) ||
+    Boolean(auditItemIds?.length);
 
   if (!hasFilter) {
     return undefined;
@@ -150,7 +167,16 @@ function buildFilter(state: LibraryState): MediaFilter | undefined {
     tagId: activeTagId,
     folderRelPath: activeFolderRelPath,
     search: search.trim() || null,
+    itemIds: auditItemIds?.length ? auditItemIds : null,
   };
+}
+
+function auditFilter(state: LibraryState): MediaFilter | undefined {
+  const { activeSourceId } = state;
+  if (activeSourceId === "all") {
+    return undefined;
+  }
+  return { sourceId: activeSourceId };
 }
 
 async function generateMissingThumbnails(
@@ -198,6 +224,9 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   activeSourceId: "all",
   activeFolderRelPath: null,
   activeTagId: null,
+  auditItemIds: null,
+  auditFindings: [],
+  loadingAudit: false,
   search: "",
   mediaPage: 1,
   mediaTotal: 0,
@@ -207,6 +236,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   loadingMore: false,
   refreshingMedia: false,
   rejectItems: [],
+  holdingBatches: [],
   loadingRejects: false,
   movingToHolding: false,
   scanningSourceId: null,
@@ -215,7 +245,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   selectMode: false,
   selectionAnchorId: null,
   setSearch: (search) => {
-    set({ search, mediaPage: 1 });
+    set({ search, auditItemIds: null, mediaPage: 1 });
     if (searchRefreshTimer) {
       clearTimeout(searchRefreshTimer);
     }
@@ -228,6 +258,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({
       activeSourceId,
       activeFolderRelPath: null,
+      auditItemIds: null,
       mediaPage: 1,
       items: [],
       mediaHasMore: false,
@@ -241,6 +272,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({
       activeSourceId: sourceId,
       activeFolderRelPath: relPath,
+      auditItemIds: null,
       mediaPage: 1,
       items: [],
       mediaHasMore: false,
@@ -254,6 +286,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     cancelBackgroundPrefetch();
     set({
       activeTagId: nextTagId,
+      auditItemIds: null,
       mediaPage: 1,
       items: [],
       mediaHasMore: false,
@@ -384,6 +417,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       });
       void get().loadFolderTrees();
       await get().refreshMedia();
+      await get().loadHoldingBatches();
     } finally {
       set({ loading: false });
     }
@@ -528,12 +562,103 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     try {
       const batchId = await moveToHolding(ids, label ?? "");
       await get().loadRejects();
-      await get().refreshMedia();
       await get().loadCatalog();
       return batchId;
     } finally {
       set({ movingToHolding: false });
     }
+  },
+  loadHoldingBatches: async () => {
+    const batches = await listHoldingBatches();
+    set({ holdingBatches: batches });
+  },
+  loadAuditFindings: async () => {
+    set({ loadingAudit: true });
+    try {
+      const findings = await runMediaAudit(auditFilter(get()));
+      set({ auditFindings: findings });
+    } finally {
+      set({ loadingAudit: false });
+    }
+  },
+  clearAuditFilter: () => {
+    if (!get().auditItemIds?.length) {
+      return;
+    }
+    cancelBackgroundPrefetch();
+    set({
+      auditItemIds: null,
+      mediaPage: 1,
+      items: [],
+      mediaHasMore: false,
+      refreshingMedia: true,
+      mediaRefreshGeneration: get().mediaRefreshGeneration + 1,
+    });
+    void get().refreshMedia();
+  },
+  applyAuditFinding: async (finding) => {
+    const { suggestedAction, itemIds } = finding;
+    const setMode = useAppStore.getState().setMode;
+
+    if (suggestedAction === "safe_delete") {
+      setMode("safe_delete");
+      return;
+    }
+
+    cancelBackgroundPrefetch();
+    set({
+      auditItemIds: itemIds.length > 0 ? itemIds : null,
+      activeSourceId: "all",
+      activeFolderRelPath: null,
+      activeTagId: null,
+      search: "",
+      mediaPage: 1,
+      items: [],
+      mediaHasMore: false,
+      refreshingMedia: true,
+      mediaRefreshGeneration: get().mediaRefreshGeneration + 1,
+    });
+
+    const targetMode =
+      suggestedAction === "tag"
+        ? "tagging"
+        : suggestedAction === "purge"
+          ? "purge"
+          : "browse";
+
+    setMode(targetMode);
+    await get().refreshMedia();
+
+    if (targetMode === "tagging" || targetMode === "browse") {
+      const idSet = new Set(itemIds);
+      set((state) => ({
+        items: state.items.map((item) => ({
+          ...item,
+          selected: idSet.has(item.id),
+        })),
+        selectMode: targetMode === "tagging" && idSet.size > 0,
+      }));
+    }
+  },
+  rescueSelectedRejectsToMaybe: async () => {
+    const selected = get().rejectItems.filter((item) => item.selected);
+    if (selected.length === 0) {
+      return 0;
+    }
+
+    for (const item of selected) {
+      await updateMediaState(item.id, { purgeState: "maybe" });
+    }
+
+    await get().loadRejects();
+    await get().refreshMedia();
+    return selected.length;
+  },
+  restoreHoldingBatchById: async (batchId) => {
+    await restoreHoldingBatch(batchId);
+    await get().loadHoldingBatches();
+    await get().loadRejects();
+    await get().refreshMedia();
   },
   addSourceFromDialog: async () => {
     const selected = await open({
@@ -614,9 +739,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const items = state.items.map((item) =>
         item.id === id ? { ...item, selected: !item.selected } : item,
       );
+      const rejectItems = state.rejectItems.map((item) =>
+        item.id === id ? { ...item, selected: !item.selected } : item,
+      );
       const selectedCount = items.filter((item) => item.selected).length;
       return {
         items,
+        rejectItems,
         selectMode: state.selectMode || selectedCount > 0,
       };
     }),
