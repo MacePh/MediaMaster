@@ -1,10 +1,11 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { openPath } from "@tauri-apps/plugin-opener";
 import { TagChip } from "../shared/TagChip";
 import { usePurgeSessionCounts } from "../../hooks/usePurgeSelectors";
 import { useAppStore } from "../../stores/appStore";
 import { useJobsStore } from "../../stores/jobsStore";
 import { useLibraryStore } from "../../stores/libraryStore";
-import { enqueueFfprobeScan } from "../../lib/tauri";
+import { enqueueFfprobeScan, openInVlc } from "../../lib/tauri";
 import { formatBitrate, formatDuration } from "../../lib/format";
 
 const PLANNED_OPERATIONS = [
@@ -16,6 +17,7 @@ const PLANNED_OPERATIONS = [
 
 function BrowseInspectorContent({ itemId }: { itemId: string }) {
   const showToast = useAppStore((state) => state.showToast);
+  const vlcAvailable = useAppStore((state) => state.vlcReady);
   const loadJobs = useJobsStore((state) => state.loadJobs);
   const item = useLibraryStore((state) =>
     state.items.find((entry) => entry.id === itemId),
@@ -108,14 +110,34 @@ function BrowseInspectorContent({ itemId }: { itemId: string }) {
       <div className="section">Operations</div>
       <div className="op-grid">
         {item.kind === "video" ? (
-          <button
-            className="op-card action"
-            type="button"
-            onClick={() => void handleProbeMetadata()}
-          >
-            <div className="t">Probe metadata</div>
-            <div className="d">FFprobe via job queue</div>
-          </button>
+          <>
+            <button
+              className="op-card action"
+              type="button"
+              onClick={() => void openPath(item.filePath)}
+            >
+              <div className="t">Play in default app</div>
+              <div className="d">System video player</div>
+            </button>
+            {vlcAvailable ? (
+              <button
+                className="op-card action"
+                type="button"
+                onClick={() => void openInVlc(item.filePath)}
+              >
+                <div className="t">Open in VLC</div>
+                <div className="d">External player</div>
+              </button>
+            ) : null}
+            <button
+              className="op-card action"
+              type="button"
+              onClick={() => void handleProbeMetadata()}
+            >
+              <div className="t">Probe metadata</div>
+              <div className="d">FFprobe via job queue</div>
+            </button>
+          </>
         ) : null}
         {PLANNED_OPERATIONS.map((operation) => (
           <div className="op-card disabled" key={operation.title}>

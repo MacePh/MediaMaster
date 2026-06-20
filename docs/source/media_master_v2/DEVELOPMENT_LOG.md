@@ -20,9 +20,19 @@ Running record of implementation slices and features. Complements the [spec](./M
 
 ---
 
-## Slice 9 — Polish (next)
+## Slice 9 — Polish (in progress)
 
-- Empty/loading/error states, toasts, keyboard hints, app icon
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `MediaPreview` component | Done | `<img>` vs `<video>`; WebView2 in-app playback |
+| Browse viewer video playback | Done | `MediaViewerModal` uses `MediaPreview` |
+| Purge hero video playback | Done | `PurgeMode` hero; keyboard shortcuts skip when video focused |
+| External fallback UI | Done | On `<video>` error: open default app or VLC |
+| VLC detection + `open_in_vlc` | Done | `services/vlc.rs`, startup detect in `App.tsx` |
+| Context menu play actions | Done | Default app + VLC for video items |
+| Inspector play links | Done | Right panel under probe metadata (videos) |
+
+**Remaining:** Empty/loading/error states, toasts, keyboard hints, app icon
 
 ---
 
@@ -161,6 +171,10 @@ Running record of implementation slices and features. Complements the [spec](./M
 
 | Commit | Summary |
 |--------|---------|
+| `ea3bb2a` | FFprobe metadata in inspector, ops panel labels, quiet FFmpeg stderr |
+| `d0574b6` | Background job queue, holding moves, FFprobe batch scans |
+| `128774c` | Query-based Audit mode with navigable finding cards |
+| `01af81b` | Safe Delete restore, rescue, sidebar holding |
 | `64a8a3d` | Scaffold |
 | `b73dc0d` | Zustand fixes, FFmpeg, docs |
 | `485a532` | Scanner + catalog |

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { openPath, revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { MockMediaItem } from "../../lib/types";
-import { copyImageToClipboard } from "../../lib/tauri";
+import { copyImageToClipboard, openInVlc } from "../../lib/tauri";
 import { useAppStore } from "../../stores/appStore";
 
 interface MediaContextMenuProps {
@@ -13,6 +13,7 @@ interface MediaContextMenuProps {
 export function MediaContextMenu({ item, position, onClose }: MediaContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const showToast = useAppStore((state) => state.showToast);
+  const vlcAvailable = useAppStore((state) => state.vlcReady);
 
   useEffect(() => {
     if (!position) {
@@ -49,6 +50,7 @@ export function MediaContextMenu({ item, position, onClose }: MediaContextMenuPr
 
   const filePath = item.filePath;
   const copyPath = item.filePath || item.thumbPath;
+  const isVideo = item.kind === "video";
 
   const revealInExplorer = async () => {
     if (!filePath) {
@@ -61,6 +63,36 @@ export function MediaContextMenu({ item, position, onClose }: MediaContextMenuPr
       await revealItemInDir(filePath);
     } catch {
       showToast("Could not open Explorer for this file");
+    }
+    onClose();
+  };
+
+  const playInDefaultApp = async () => {
+    if (!filePath) {
+      showToast("Original file path unavailable");
+      onClose();
+      return;
+    }
+
+    try {
+      await openPath(filePath);
+    } catch {
+      showToast("Could not open file in default app");
+    }
+    onClose();
+  };
+
+  const playInVlc = async () => {
+    if (!filePath) {
+      showToast("Original file path unavailable");
+      onClose();
+      return;
+    }
+
+    try {
+      await openInVlc(filePath);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not open in VLC");
     }
     onClose();
   };
@@ -91,9 +123,22 @@ export function MediaContextMenu({ item, position, onClose }: MediaContextMenuPr
       <button type="button" className="ctx-item" role="menuitem" onClick={() => void revealInExplorer()}>
         Reveal in Explorer
       </button>
-      <button type="button" className="ctx-item" role="menuitem" onClick={() => void copyImage()}>
-        Copy image
-      </button>
+      {isVideo ? (
+        <>
+          <button type="button" className="ctx-item" role="menuitem" onClick={() => void playInDefaultApp()}>
+            Play in default app
+          </button>
+          {vlcAvailable ? (
+            <button type="button" className="ctx-item" role="menuitem" onClick={() => void playInVlc()}>
+              Open in VLC
+            </button>
+          ) : null}
+        </>
+      ) : (
+        <button type="button" className="ctx-item" role="menuitem" onClick={() => void copyImage()}>
+          Copy image
+        </button>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { gradientForHue } from "../../lib/mockData";
+import { MediaPreview, isVideoFocused } from "../../components/media/MediaPreview";
 import { useVisibleItems } from "../../hooks/useLibrarySelectors";
 import {
   usePurgeCurrentItem,
@@ -16,6 +16,7 @@ import { usePurgeStore } from "../../stores/purgeStore";
 export function PurgeMode() {
   const setMode = useAppStore((state) => state.setMode);
   const showToast = useAppStore((state) => state.showToast);
+  const vlcAvailable = useAppStore((state) => state.vlcReady);
   const updateItemState = useLibraryStore((state) => state.updateItemState);
   const sessionItems = usePurgeStore((state) => state.sessionItems);
   const index = usePurgeStore((state) => state.index);
@@ -58,6 +59,10 @@ export function PurgeMode() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isVideoFocused()) {
+        return;
+      }
+
       if (event.key === "ArrowLeft") {
         applyDecision("reject");
       }
@@ -81,7 +86,7 @@ export function PurgeMode() {
   }, [current?.id, index, sessionComplete]);
 
   const previewPath = current?.filePath || current?.thumbPath;
-  const previewSrc = previewPath ? convertFileSrc(previewPath) : null;
+  const previewSrc = previewPath && current?.kind === "image" ? true : Boolean(current?.filePath);
 
   if (sessionItems.length === 0) {
     return (
@@ -175,8 +180,14 @@ export function PurgeMode() {
             {current.state === "maybe" ? (
               <div className="decision maybe on">MAYBE</div>
             ) : null}
-            {previewSrc ? (
-              <img src={previewSrc} alt={current.name} className="hero-img" />
+            {previewSrc && current ? (
+              <MediaPreview
+                item={current}
+                imageClassName="hero-img"
+                videoClassName="hero-video"
+                emptyClassName="mark"
+                vlcAvailable={vlcAvailable}
+              />
             ) : (
               <div className="mark">{current.ext}</div>
             )}

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { detectFfmpeg, getDbStatus } from "../lib/tauri";
+import { detectFfmpeg, detectVlc, getDbStatus } from "../lib/tauri";
 import { JobTray } from "../components/shell/JobTray";
 import { RightPanel } from "../components/shell/RightPanel";
 import { Sidebar } from "../components/shell/Sidebar";
@@ -20,6 +20,7 @@ export function App() {
   const mode = useAppStore((state) => state.mode);
   const setDbStatus = useAppStore((state) => state.setDbStatus);
   const setFfmpegStatus = useAppStore((state) => state.setFfmpegStatus);
+  const setVlcStatus = useAppStore((state) => state.setVlcStatus);
   const showToast = useAppStore((state) => state.showToast);
   const loadCatalog = useLibraryStore((state) => state.loadCatalog);
   const setScanProgress = useLibraryStore((state) => state.setScanProgress);
@@ -120,8 +121,22 @@ export function App() {
         console.error("Failed to detect FFmpeg", error);
         setFfmpegStatus(false, "FFmpeg not detected");
       }
+
+      try {
+        const vlc = await detectVlc();
+        if (vlc.vlcPath) {
+          const versionLine = vlc.vlcVersion?.split("\n")[0];
+          const tooltip = [versionLine, vlc.vlcPath].filter(Boolean).join("\n");
+          setVlcStatus(true, tooltip || "VLC ready");
+        } else {
+          setVlcStatus(false, "VLC not detected");
+        }
+      } catch (error) {
+        console.error("Failed to detect VLC", error);
+        setVlcStatus(false, "VLC not detected");
+      }
     })();
-  }, [setDbStatus, setFfmpegStatus]);
+  }, [setDbStatus, setFfmpegStatus, setVlcStatus]);
 
   return (
     <div className="app">

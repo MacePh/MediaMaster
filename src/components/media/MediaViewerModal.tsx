@@ -1,6 +1,7 @@
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { useEffect } from "react";
+import { MediaPreview } from "./MediaPreview";
 import type { MockMediaItem } from "../../lib/types";
+import { useAppStore } from "../../stores/appStore";
 
 interface MediaViewerModalProps {
   open: boolean;
@@ -10,11 +11,6 @@ interface MediaViewerModalProps {
   onNavigate: (itemId: string) => void;
 }
 
-function previewSrc(item: MockMediaItem): string | null {
-  const path = item.filePath || item.thumbPath;
-  return path ? convertFileSrc(path) : null;
-}
-
 export function MediaViewerModal({
   open,
   items,
@@ -22,6 +18,7 @@ export function MediaViewerModal({
   onClose,
   onNavigate,
 }: MediaViewerModalProps) {
+  const vlcAvailable = useAppStore((state) => state.vlcReady);
   const item = items[index] ?? null;
   const hasPrev = index > 0;
   const hasNext = index < items.length - 1;
@@ -32,6 +29,10 @@ export function MediaViewerModal({
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLVideoElement) {
+        return;
+      }
+
       if (event.key === "Escape") {
         onClose();
       }
@@ -57,8 +58,6 @@ export function MediaViewerModal({
     return null;
   }
 
-  const src = previewSrc(item);
-
   return (
     <div className="viewer-backdrop" onClick={onClose} role="presentation">
       <div className="viewer-shell" onClick={(event) => event.stopPropagation()}>
@@ -75,11 +74,13 @@ export function MediaViewerModal({
               ‹
             </button>
           ) : null}
-          {src ? (
-            <img src={src} alt={item.name} className="viewer-image" />
-          ) : (
-            <div className="viewer-empty">No preview available</div>
-          )}
+          <MediaPreview
+            item={item}
+            imageClassName="viewer-image"
+            videoClassName="viewer-video"
+            emptyClassName="viewer-empty"
+            vlcAvailable={vlcAvailable}
+          />
           {hasNext ? (
             <button
               className="viewer-nav next btn"

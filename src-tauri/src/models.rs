@@ -220,6 +220,13 @@ pub struct Job {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct VlcInfo {
+    pub vlc_path: Option<String>,
+    pub vlc_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FfmpegInfo {
     pub ffmpeg_path: Option<String>,
     pub ffprobe_path: Option<String>,

@@ -108,6 +108,11 @@ export interface FfmpegInfo {
   ffprobeVersion?: string | null;
 }
 
+export interface VlcInfo {
+  vlcPath?: string | null;
+  vlcVersion?: string | null;
+}
+
 export interface Source {
   id: string;
   name: string;

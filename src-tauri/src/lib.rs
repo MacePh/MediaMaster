@@ -66,6 +66,8 @@ pub fn run() {
             commands::jobs::clear_finished_jobs,
             commands::jobs::enqueue_ffprobe_scan,
             commands::ffmpeg::detect_ffmpeg,
+            commands::vlc::detect_vlc,
+            commands::vlc::open_in_vlc,
             commands::settings::get_settings,
             commands::settings::set_setting,
             commands::shell::copy_image_to_clipboard,

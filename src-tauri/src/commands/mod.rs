@@ -8,3 +8,4 @@ pub mod scan;
 pub mod settings;
 pub mod shell;
 pub mod tags;
+pub mod vlc;

@@ -14,6 +14,7 @@ import type {
   SourceFolderNode,
   Tag,
   ThumbnailResult,
+  VlcInfo,
 } from "./types";
 
 export async function getDbStatus(): Promise<DbStatus> {
@@ -78,6 +79,14 @@ export async function copyImageToClipboard(path: string): Promise<void> {
 
 export async function detectFfmpeg(): Promise<FfmpegInfo> {
   return invoke<FfmpegInfo>("detect_ffmpeg");
+}
+
+export async function detectVlc(): Promise<VlcInfo> {
+  return invoke<VlcInfo>("detect_vlc");
+}
+
+export async function openInVlc(path: string): Promise<void> {
+  return invoke("open_in_vlc", { path });
 }
 
 export async function getSettings(): Promise<Record<string, string>> {

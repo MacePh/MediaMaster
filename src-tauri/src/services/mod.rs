@@ -6,3 +6,4 @@ pub mod holding;
 pub mod job_runner;
 pub mod scanner;
 pub mod thumbnailer;
+pub mod vlc;
